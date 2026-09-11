@@ -18,6 +18,6 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           username: ${{ secrets.SSH_USER }}
           password: ${{ secrets.SSH_PASSWORD }}
-          source: "index.html,audio/*"
+          source: "index.html,audio/*,img/*"
           target: ${{ secrets.SSH_TARGET_PATH }}
           overwrite: true

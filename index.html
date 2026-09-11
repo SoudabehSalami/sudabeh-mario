@@ -138,42 +138,11 @@
     width:44%;
     flex:none;
     overflow:hidden;
-    background:linear-gradient(180deg, var(--cabinet-2), var(--cabinet-1) 75%);
+    background:
+      url('img/intro-mushroom.jpg') center/cover no-repeat,
+      linear-gradient(180deg, var(--cabinet-2), var(--cabinet-1) 75%);
     border-right:1px solid rgba(52,229,255,.25);
     box-shadow:6px 0 20px rgba(0,0,0,.25);
-  }
-  .intro-art .i-glow{
-    position:absolute;
-    inset:-20% -20% auto -20%;
-    height:70%;
-    background:radial-gradient(ellipse 70% 70% at 50% 30%, rgba(255,62,154,.28), transparent 65%);
-  }
-  .intro-art .i-star{
-    position:absolute;
-    width:3px;height:3px;border-radius:50%;
-    background:var(--neon-cyan);
-    box-shadow:0 0 6px 1px rgba(52,229,255,.8);
-  }
-  .intro-art .i-hill{
-    position:absolute;left:-12%;right:-12%;bottom:-8%;height:40%;
-    background:var(--cabinet-1);
-    border-radius:50% 50% 0 0/100% 100% 0 0;
-  }
-  .intro-art .i-cap{
-    position:absolute;
-    width:34%;aspect-ratio:1.5/1;
-    bottom:24%;left:28%;
-    border-radius:50% 50% 8% 8%/65% 65% 8% 8%;
-    background:linear-gradient(180deg, var(--neon-pink), #c21f74);
-    box-shadow:0 0 16px rgba(255,62,154,.5);
-  }
-  .intro-art .i-stem{
-    position:absolute;
-    width:11%;aspect-ratio:.55/1;
-    bottom:12%;left:42%;
-    border-radius:6px;
-    background:var(--neon-cyan);
-    box-shadow:0 0 10px rgba(52,229,255,.45);
   }
   .intro-text{
     flex:1;
@@ -304,15 +273,7 @@
 
     <div class="overlay overlay-intro" id="introOverlay">
       <div class="intro-split">
-        <div class="intro-art" id="introArt" aria-hidden="true">
-          <div class="i-glow"></div>
-          <div class="i-star" style="top:14%;left:20%;"></div>
-          <div class="i-star" style="top:24%;left:74%;"></div>
-          <div class="i-star" style="top:40%;left:30%;"></div>
-          <div class="i-hill"></div>
-          <div class="i-cap"></div>
-          <div class="i-stem"></div>
-        </div>
+        <div class="intro-art" id="introArt" aria-hidden="true"></div>
         <div class="intro-text">
           <p class="eyebrow-mini">A TINY PLATFORMER</p>
           <p class="press-start">PRESS START</p>
