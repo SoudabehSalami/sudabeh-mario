@@ -2,9 +2,6 @@ name: Deploy to server
 
 on:
   push:
-    branches:
-      - main
-      - claude/sleepy-tesla-p1qqtw
   workflow_dispatch:
 
 jobs:
