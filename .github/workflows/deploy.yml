@@ -14,13 +14,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Rsync files to server
-        uses: burnett01/rsync-deployments@7.0.1
+      - name: Copy files to server (password auth)
+        uses: appleboy/scp-action@v0.1.7
         with:
-          switches: -avzr --delete --exclude=".git" --exclude=".github"
-          path: "./"
-          remote_path: ${{ secrets.SSH_TARGET_PATH }}
-          remote_host: ${{ secrets.SSH_HOST }}
-          remote_port: ${{ secrets.SSH_PORT }}
-          remote_user: ${{ secrets.SSH_USER }}
-          remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          source: "index.html"
+          target: ${{ secrets.SSH_TARGET_PATH }}
+          overwrite: true
