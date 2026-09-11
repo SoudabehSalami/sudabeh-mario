@@ -397,13 +397,37 @@
       o.stop(actx.currentTime + dur);
     }catch(e){}
   }
+  const SFX_FILES = {
+    jump:'audio/jump.mp3', coin:'audio/coin.mp3', stomp:'audio/stomp.mp3',
+    power:'audio/power.mp3', hurt:'audio/hurt.mp3', win:'audio/win.mp3', lose:'audio/lose.mp3'
+  };
+  const sfxAudio = {};
+  for(const key in SFX_FILES){
+    const a = new Audio(SFX_FILES[key]);
+    a.preload = 'auto';
+    sfxAudio[key] = a;
+  }
+  function playSfx(name, fallback){
+    const base = sfxAudio[name];
+    if(base){
+      try{
+        const node = base.cloneNode();
+        node.volume = 0.6;
+        const p = node.play();
+        if(p && p.catch) p.catch(()=>{ if(fallback) fallback(); });
+        return;
+      }catch(e){}
+    }
+    if(fallback) fallback();
+  }
   const sfx = {
-    jump: ()=>beep(520,0.12,'square',0.05),
-    coin: ()=>beep(1050,0.1,'square',0.05),
-    stomp: ()=>beep(180,0.15,'sawtooth',0.06),
-    power: ()=>beep(700,0.25,'triangle',0.07),
-    hurt: ()=>beep(120,0.3,'sawtooth',0.08),
-    win: ()=>{beep(660,0.12,'square',0.06);setTimeout(()=>beep(880,0.18,'square',0.06),120);setTimeout(()=>beep(1100,0.28,'square',0.06),260);}
+    jump: ()=>playSfx('jump', ()=>beep(520,0.12,'square',0.05)),
+    coin: ()=>playSfx('coin', ()=>beep(1050,0.1,'square',0.05)),
+    stomp: ()=>playSfx('stomp', ()=>beep(180,0.15,'sawtooth',0.06)),
+    power: ()=>playSfx('power', ()=>beep(700,0.25,'triangle',0.07)),
+    hurt: ()=>playSfx('hurt', ()=>beep(120,0.3,'sawtooth',0.08)),
+    win: ()=>playSfx('win', ()=>{beep(660,0.12,'square',0.06);setTimeout(()=>beep(880,0.18,'square',0.06),120);setTimeout(()=>beep(1100,0.28,'square',0.06),260);}),
+    lose: ()=>playSfx('lose', ()=>{beep(300,0.15,'sawtooth',0.06);setTimeout(()=>beep(220,0.18,'sawtooth',0.06),140);setTimeout(()=>beep(140,0.3,'sawtooth',0.07),300);})
   };
 
   // ---------- background melody (original tune, Persian-flavored scale) ----------
@@ -597,6 +621,7 @@
       stopMusic();
       document.getElementById('loseScore').textContent = score;
       setOverlay('lose');
+      sfx.lose();
     }else{
       respawn();
     }
