@@ -1,0 +1,26 @@
+name: Deploy to server
+
+on:
+  push:
+    branches:
+      - main
+      - claude/sleepy-tesla-p1qqtw
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Rsync files to server
+        uses: burnett01/rsync-deployments@7.0.1
+        with:
+          switches: -avzr --delete --exclude=".git" --exclude=".github"
+          path: "./"
+          remote_path: ${{ secrets.SSH_TARGET_PATH }}
+          remote_host: ${{ secrets.SSH_HOST }}
+          remote_port: ${{ secrets.SSH_PORT }}
+          remote_user: ${{ secrets.SSH_USER }}
+          remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
