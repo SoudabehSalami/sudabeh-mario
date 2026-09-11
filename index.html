@@ -678,6 +678,11 @@
   const flag = {x: LEVEL_W - 140, y: GROUND_Y - 210, h:210};
 
   // ---------- player ----------
+  const playerAvatarImg = new Image();
+  let playerAvatarLoaded = false;
+  playerAvatarImg.onload = ()=>{ playerAvatarLoaded = true; };
+  playerAvatarImg.src = 'img/player-avatar.png';
+
   const START = {x:60, y:GROUND_Y-40};
   const player = {
     x:START.x, y:START.y, vx:0, vy:0,
@@ -1443,6 +1448,20 @@
     ctx.translate(player.x, player.y);
     if(player.facing<0){ ctx.translate(player.w,0); ctx.scale(-1,1); }
     const w=player.w, h=player.h;
+
+    if(playerAvatarLoaded){
+      const aspect = playerAvatarImg.naturalWidth / playerAvatarImg.naturalHeight;
+      const drawH = h * 1.15;
+      const drawW = drawH * aspect;
+      ctx.drawImage(playerAvatarImg, (w-drawW)/2, h-drawH, drawW, drawH);
+      if(player.big){
+        ctx.strokeStyle = 'rgba(255,204,51,0.7)';
+        ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(w*0.5,h*0.5, w*0.75, 0, Math.PI*2); ctx.stroke();
+      }
+      ctx.restore();
+      return;
+    }
 
     ctx.strokeStyle = '#1a1508';
     ctx.lineWidth = 1.6;
