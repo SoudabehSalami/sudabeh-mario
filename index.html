@@ -178,6 +178,7 @@
   .touch-controls .side{display:flex;gap:10px;pointer-events:auto;}
   .tbtn{
     width:52px;height:52px;
+    padding:0;
     border-radius:50%;
     border:2px solid rgba(52,229,255,.5);
     background:rgba(21,15,46,.55);
@@ -187,6 +188,7 @@
     display:flex;align-items:center;justify-content:center;
     user-select:none;
     -webkit-user-select:none;
+    cursor:pointer;
   }
   .tbtn.jump{
     border-color:rgba(255,204,51,.55);
@@ -198,6 +200,56 @@
   @media (max-width: 480px){
     .hint-row{font-size:12px;}
   }
+
+  .touch-controls, .touch-controls .side, .hint-row, .hint{
+    direction:ltr;
+  }
+  .touch-controls{
+    display:none;
+  }
+  .touch-controls.show{
+    display:flex;
+  }
+
+  .hud-controls{
+    position:absolute;
+    top:10px;
+    right:10px;
+    display:none;
+    gap:8px;
+    direction:ltr;
+    z-index:2;
+  }
+  .hud-controls.show{display:flex;}
+  .icon-btn{
+    width:34px;height:34px;
+    border-radius:50%;
+    border:1px solid rgba(255,255,255,.25);
+    background:rgba(10,6,26,.55);
+    color:var(--text-main);
+    font-size:15px;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+    padding:0;
+  }
+  .icon-btn:focus-visible, .tbtn:focus-visible{
+    outline:3px solid var(--neon-gold);
+    outline-offset:2px;
+  }
+
+  .sr-only{
+    position:absolute;
+    width:1px;height:1px;
+    padding:0;margin:-1px;
+    overflow:hidden;
+    clip:rect(0,0,0,0);
+    white-space:nowrap;
+    border:0;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .marquee, .overlay{ transition:none !important; }
+  }
 </style>
 </head>
 <body>
@@ -205,17 +257,29 @@
 <div class="marquee">
   <p class="eyebrow">A TINY PLATFORMER</p>
   <h1>پرش اسپراوت 🍄</h1>
-  <p>یه لول کلاسیک: از رو سکوها بپر، سکه جمع کن، قارچ بخور، از شرّ خزنده‌ها خلاص شو و به پرچم برس.</p>
+  <p>یه لول کلاسیک: از رو سکوها بپر، سکه جمع کن، قارچ بخور، از شرّ دشمن‌ها خلاص شو و به پرچم برس.</p>
 </div>
 
 <div class="cabinet">
   <div class="screen-wrap" id="screenWrap">
-    <canvas id="game"></canvas>
+    <canvas id="game" aria-hidden="true"></canvas>
+    <div id="srLive" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+    <div class="hud-controls" id="hudControls">
+      <button type="button" class="icon-btn" id="btnPause" aria-label="مکث بازی">⏸</button>
+      <button type="button" class="icon-btn" id="btnMute" aria-label="بی‌صدا کردن">🔊</button>
+    </div>
 
     <div class="overlay" id="introOverlay">
       <h2>آماده‌ای؟</h2>
       <p>با کیبورد یا دکمه‌های لمسی بازی کن</p>
       <button class="arcade-btn" id="startBtn">شروع بازی</button>
+    </div>
+
+    <div class="overlay" id="pauseOverlay">
+      <h2>⏸ مکث</h2>
+      <button class="arcade-btn" id="pauseResume">ادامه بازی</button>
+      <button class="arcade-btn" id="pauseRestart">شروع دوباره</button>
     </div>
 
     <div class="overlay" id="winOverlay">
@@ -229,7 +293,7 @@
 
     <div class="overlay" id="loseOverlay">
       <h2>💀 باختی</h2>
-      <p>خزنده‌ها جونت رو گرفتن</p>
+      <p>دشمن‌ها جونت رو گرفتن</p>
       <div class="stat-row">
         <div>امتیاز <span class="v" id="loseScore">0</span></div>
       </div>
@@ -238,11 +302,11 @@
 
     <div class="touch-controls" id="touchControls">
       <div class="side">
-        <div class="tbtn" id="btnLeft">◀</div>
-        <div class="tbtn" id="btnRight">▶</div>
+        <button type="button" class="tbtn" id="btnLeft" aria-label="حرکت به چپ">◀</button>
+        <button type="button" class="tbtn" id="btnRight" aria-label="حرکت به راست">▶</button>
       </div>
       <div class="side">
-        <div class="tbtn jump" id="btnJump">⤒</div>
+        <button type="button" class="tbtn jump" id="btnJump" aria-label="پرش">⤒</button>
       </div>
     </div>
   </div>
@@ -261,6 +325,13 @@
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
   const screenWrap = document.getElementById('screenWrap');
+  const srLive = document.getElementById('srLive');
+  const touchControls = document.getElementById('touchControls');
+  const hudControls = document.getElementById('hudControls');
+
+  const REDUCE_MOTION = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+  function announce(msg){ srLive.textContent = msg; }
 
   // ---------- logical resolution ----------
   const LW = 800, LH = 450; // logical game units
@@ -279,7 +350,11 @@
 
   // ---------- audio (tiny beeps, no assets) ----------
   let actx = null;
+  let muted = false;
+  try{ muted = localStorage.getItem('sproutMuted') === '1'; }catch(e){}
+
   function beep(freq, dur, type, gain){
+    if(muted) return;
     try{
       if(!actx) actx = new (window.AudioContext||window.webkitAudioContext)();
       const o = actx.createOscillator();
@@ -299,8 +374,14 @@
     stomp: ()=>beep(180,0.15,'sawtooth',0.06),
     power: ()=>beep(700,0.25,'triangle',0.07),
     hurt: ()=>beep(120,0.3,'sawtooth',0.08),
-    win: ()=>{beep(660,0.12,'square',0.06);setTimeout(()=>beep(880,0.18,'square',0.06),120);setTimeout(()=>beep(1100,0.28,'square',0.06),260);}
+    win: ()=>{beep(660,0.12,'square',0.06);setTimeout(()=>beep(880,0.18,'square',0.06),120);setTimeout(()=>beep(1100,0.28,'square',0.06),260);},
+    gameover: ()=>{beep(300,0.15,'sawtooth',0.06);setTimeout(()=>beep(220,0.18,'sawtooth',0.06),140);setTimeout(()=>beep(140,0.32,'sawtooth',0.07),300);}
   };
+
+  function updateMuteBtn(){
+    btnMute.textContent = muted ? '🔇' : '🔊';
+    btnMute.setAttribute('aria-label', muted ? 'باز کردن صدا' : 'بی‌صدا کردن');
+  }
 
   // ---------- background melody (original tune, Persian-flavored scale) ----------
   const MUSIC_NOTE = {
@@ -316,7 +397,7 @@
   const MUSIC_UNIT = 0.16;
   let musicInterval = null, musicIndex = 0;
   function startMusic(){
-    if(musicInterval) return;
+    if(musicInterval || muted) return;
     musicIndex = 0;
     musicInterval = setInterval(()=>{
       const name = MUSIC_MELODY[musicIndex % MUSIC_MELODY.length];
@@ -361,23 +442,17 @@
     {x:3120,y:310, w:120, h:22},
   ];
 
-  // pits are the gaps between ground segments (used for fall-death check)
-  function onAnyGround(x, tolerance){
-    for(const p of platforms){
-      if(p.h < 40) continue; // only "ground" style
-      if(x >= p.x - tolerance && x <= p.x + p.w + tolerance) return true;
-    }
-    return false;
-  }
-
   const coins = [];
-  [ [160,250],[300,190],[440,150],[650,270],[740,220],[900,180],[1020,190],
+  [ [160,300],[300,230],[440,150],[650,270],[740,220],[900,180],[1020,190],
     [1100,250],[1240,140],[1300,140],[1500,260],[1640,180],[1860,250],
     [2050,150],[2180,90],[2360,250],[2500,130],[2510,130],[2790,250],
     [2970,200],[3150,260],[2700,200],[2870,200]
   ].forEach(([x,y])=>coins.push({x,y,r:9,taken:false,bob:Math.random()*Math.PI*2}));
 
-  const mushrooms = [ {x:1230, y:200, taken:false, w:28,h:28} ];
+  const mushrooms = [
+    {x:1075, y:272, taken:false, w:28,h:28},
+    {x:2790, y:272, taken:false, w:28,h:28}
+  ];
 
   const POMEGRANATE_DECOR = [
     {x:180,  y:GROUND_Y-2, s:1.6},
@@ -397,21 +472,37 @@
     {x:2470,minX:2470,maxX:2600,y:230, w:26,h:24, dir:-1,speed:55, alive:true, squish:0, onPlatform:true},
   ];
 
+  const ENEMY_SPAWNS = enemies.map(e => ({x:e.x, y:e.y, dir:e.dir}));
+
   const flag = {x: LEVEL_W - 140, y: GROUND_Y - 210, h:210};
 
   // ---------- player ----------
   const START = {x:60, y:GROUND_Y-40};
+
+  // checkpoints: level start plus the start of every later ground segment,
+  // so a death doesn't erase the whole run on a 3400px-wide level
+  const CHECKPOINTS = [{x:START.x, y:START.y}].concat(
+    platforms.filter(p => p.h > 40).slice(1).map(p => ({x:p.x+30, y:GROUND_Y-40}))
+  );
+  let checkpointIndex = 0;
+
+  function updateCheckpoint(){
+    for(let i=checkpointIndex+1; i<CHECKPOINTS.length; i++){
+      if(player.x >= CHECKPOINTS[i].x) checkpointIndex = i;
+      else break;
+    }
+  }
+  const PLAYER_H_SMALL = 36, PLAYER_H_BIG = 46;
   const player = {
     x:START.x, y:START.y, vx:0, vy:0,
-    w:26, h:36, grounded:false, facing:1,
-    big:false, invuln:0, coyote:0, jumpBuffer:0,
-    dead:false
+    w:26, h:PLAYER_H_SMALL, grounded:false, facing:1,
+    big:false, invuln:0, coyote:0, jumpBuffer:0
   };
 
-  let score = 0, coinCount = 0, lives = 3;
+  const MAX_LIVES = 3;
+  let score = 0, coinCount = 0, lives = MAX_LIVES;
   let camX = 0;
-  let state = 'intro'; // intro | play | win | lose
-  let flagSlide = 0;
+  let state = 'intro'; // intro | play | pause | win | lose
   let winTriggered = false;
 
   const keys = {};
@@ -432,6 +523,8 @@
     el.addEventListener('touchcancel', up, {passive:false});
     el.addEventListener('mousedown', down);
     window.addEventListener('mouseup', up);
+    el.addEventListener('keydown', ev=>{ if(ev.key==='Enter'||ev.key===' '){ ev.preventDefault(); onDown(); } });
+    el.addEventListener('keyup', ev=>{ if(ev.key==='Enter'||ev.key===' '){ ev.preventDefault(); onUp(); } });
   }
   const touch = {left:false,right:false,jump:false};
   bindHold(document.getElementById('btnLeft'),  ()=>touch.left=true,  ()=>touch.left=false);
@@ -441,15 +534,56 @@
   document.getElementById('startBtn').addEventListener('click', beginPlay);
   document.getElementById('winRestart').addEventListener('click', resetGame);
   document.getElementById('loseRestart').addEventListener('click', resetGame);
+  document.getElementById('pauseResume').addEventListener('click', togglePause);
+  document.getElementById('pauseRestart').addEventListener('click', resetGame);
+
+  const btnMute = document.getElementById('btnMute');
+  btnMute.addEventListener('click', ()=>{
+    muted = !muted;
+    try{ localStorage.setItem('sproutMuted', muted ? '1' : '0'); }catch(e){}
+    if(muted) stopMusic(); else if(state==='play') startMusic();
+    updateMuteBtn();
+  });
+  updateMuteBtn();
+
+  document.getElementById('btnPause').addEventListener('click', togglePause);
+  window.addEventListener('keydown', e=>{
+    if((e.key==='p'||e.key==='P'||e.key==='Escape') && (state==='play'||state==='pause')){
+      e.preventDefault();
+      togglePause();
+    }
+  });
 
   const introOverlay = document.getElementById('introOverlay');
+  const pauseOverlay = document.getElementById('pauseOverlay');
   const winOverlay = document.getElementById('winOverlay');
   const loseOverlay = document.getElementById('loseOverlay');
 
   function setOverlay(which){
     introOverlay.classList.toggle('show', which==='intro');
+    pauseOverlay.classList.toggle('show', which==='pause');
     winOverlay.classList.toggle('show', which==='win');
     loseOverlay.classList.toggle('show', which==='lose');
+  }
+
+  function updateChrome(){
+    touchControls.classList.toggle('show', state==='play');
+    hudControls.classList.toggle('show', state==='play' || state==='pause');
+  }
+
+  function togglePause(){
+    if(state==='play'){
+      state='pause';
+      stopMusic();
+      setOverlay('pause');
+      announce('بازی متوقف شد');
+    } else if(state==='pause'){
+      state='play';
+      setOverlay(null);
+      startMusic();
+      announce('بازی ادامه پیدا کرد');
+    }
+    updateChrome();
   }
 
   function beginPlay(){
@@ -458,30 +592,37 @@
     setOverlay(null);
     if(actx && actx.state==='suspended') actx.resume();
     startMusic();
+    updateChrome();
+    announce('بازی شروع شد');
   }
 
   function resetGame(){
-    score=0; coinCount=0; lives=3;
+    score=0; coinCount=0; lives=MAX_LIVES;
     coins.forEach(c=>c.taken=false);
     mushrooms.forEach(m=>m.taken=false);
-    enemies.forEach(e=>{ e.alive=true; e.squish=0; });
+    enemies.forEach((e,i)=>{
+      const s = ENEMY_SPAWNS[i];
+      e.x=s.x; e.y=s.y; e.dir=s.dir;
+      e.alive=true; e.squish=0;
+    });
     player.x=START.x; player.y=START.y; player.vx=0; player.vy=0;
-    player.big=false; player.invuln=0; player.dead=false;
-    camX=0; flagSlide=0; winTriggered=false;
+    player.big=false; player.invuln=0; player.h=PLAYER_H_SMALL;
+    camX=0; winTriggered=false;
+    checkpointIndex=0;
     stopMusic();
     state='intro';
     setOverlay('intro');
+    updateChrome();
   }
 
   function respawn(){
-    player.x = Math.max(START.x, camX + 40);
-    // find nearest ground start behind player, simpler: snap to start of current ground segment or level start
-    player.x = START.x + Math.floor(camX/700)*0; // keep simple: restart from level start segment safety
-    player.x = START.x;
-    player.y = START.y;
+    const cp = CHECKPOINTS[checkpointIndex];
+    player.x = cp.x;
+    player.y = cp.y;
     player.vx=0; player.vy=0;
     player.big=false;
-    player.invuln=90;
+    player.h=PLAYER_H_SMALL;
+    player.invuln=1.5;
   }
 
   function loseLife(){
@@ -491,10 +632,14 @@
     if(lives<=0){
       state='lose';
       stopMusic();
+      sfx.gameover();
       document.getElementById('loseScore').textContent = score;
       setOverlay('lose');
+      updateChrome();
+      announce('باختی. امتیاز نهایی ' + score);
     }else{
       respawn();
+      announce('یک جون از دست دادی. ' + lives + ' جون باقی مونده');
     }
   }
 
@@ -503,8 +648,11 @@
     return ax < bx+bw && ax+aw > bx && ay < by+bh && ay+ah > by;
   }
 
+  const ACCEL = 900, MAX_SPEED = 210, FRICTION = 1200, GRAVITY = 1500, JUMP_VEL = -520, MAX_FALL = 700;
+  const LANDING_TOLERANCE = 10; // px: treat a near-top overlap as "about to land", not a wall hit
+
   function movePlayer(dt){
-    const accel = 900, maxSpeed = 210, friction = 1200, gravity = 1500, jumpVel = -520, maxFall = 700;
+    const accel = ACCEL, maxSpeed = MAX_SPEED, friction = FRICTION, gravity = GRAVITY, jumpVel = JUMP_VEL, maxFall = MAX_FALL;
     let dir = 0;
     if(keys['ArrowLeft']||keys['a']||keys['A']||touch.left) dir -= 1;
     if(keys['ArrowRight']||keys['d']||keys['D']||touch.right) dir += 1;
@@ -539,6 +687,9 @@
     player.x = Math.max(0, Math.min(LEVEL_W - player.w, player.x));
     for(const p of platforms){
       if(aabb(player.x,player.y,player.w,player.h,p.x,p.y,p.w,p.h)){
+        const playerBottom = player.y + player.h;
+        const aboutToLand = player.vy >= 0 && (playerBottom - p.y) < LANDING_TOLERANCE;
+        if(aboutToLand) continue; // let the vertical pass resolve this as a landing, not a wall hit
         if(player.vx>0) player.x = p.x - player.w;
         else if(player.vx<0) player.x = p.x + p.w;
         player.vx = 0;
@@ -561,7 +712,7 @@
       }
     }
 
-    if(player.invuln>0) player.invuln = Math.max(0, player.invuln-1);
+    if(player.invuln>0) player.invuln = Math.max(0, player.invuln-dt);
 
     // fell into pit
     if(player.y > LH + 60){
@@ -590,8 +741,9 @@
         } else if(player.invuln<=0){
           if(player.big){
             player.big = false;
-            player.invuln = 90;
-            player.h = 36;
+            player.invuln = 1.5;
+            player.y += (player.h - PLAYER_H_SMALL); // keep feet planted while shrinking
+            player.h = PLAYER_H_SMALL;
             sfx.hurt();
           } else {
             loseLife();
@@ -620,9 +772,10 @@
         m.taken = true;
         if(!player.big){
           player.big = true;
-          player.h = 46;
-          player.y -= 10;
+          player.y -= (PLAYER_H_BIG - player.h);
+          player.h = PLAYER_H_BIG;
           score += 50;
+          announce('بزرگ شدی!');
         } else {
           score += 100;
         }
@@ -645,6 +798,7 @@
     t += dt;
     if(state !== 'play') return;
     movePlayer(dt);
+    updateCheckpoint();
     updateEnemies(dt);
     updateCoins();
     updateMushrooms();
@@ -656,7 +810,9 @@
       document.getElementById('winScore').textContent = score;
       document.getElementById('winCoins').textContent = coinCount;
       setOverlay('win');
+      updateChrome();
       sfx.win();
+      announce('بردی! امتیاز ' + score + '، سکه ' + coinCount);
     }
 
     camX = Math.max(0, Math.min(LEVEL_W - LW, player.x - LW*0.4));
@@ -713,7 +869,7 @@
     // coins
     for(const c of coins){
       if(c.taken) continue;
-      const bob = Math.sin(t*4 + c.bob)*3;
+      const bob = REDUCE_MOTION ? 0 : Math.sin(t*4 + c.bob)*3;
       drawCoin(c.x, c.y+bob, c.r);
     }
 
@@ -1031,7 +1187,7 @@
 
     // feet
     if(e.alive){
-      const wig = Math.sin(t*10 + e.x)*3;
+      const wig = REDUCE_MOTION ? 0 : Math.sin(t*10 + e.x)*3;
       ctx.fillStyle = '#3a2010';
       ctx.fillRect(w*0.06+wig, h*0.84, w*0.34, h*0.18);
       ctx.fillRect(w*0.6-wig, h*0.84, w*0.34, h*0.18);
@@ -1068,7 +1224,7 @@
     ctx.fillStyle = '#ffcc33';
     ctx.beginPath(); ctx.arc(flag.x+21, flag.y-6, 6, 0, Math.PI*2); ctx.fill();
 
-    const wave = Math.sin(t*3)*4;
+    const wave = REDUCE_MOTION ? 0 : Math.sin(t*3)*4;
     ctx.fillStyle = '#3ddc84';
     ctx.beginPath();
     ctx.moveTo(flag.x+24, flag.y+6);
@@ -1157,8 +1313,9 @@
 
   function drawPlayer(){
     ctx.save();
-    const blink = player.invuln>0 && Math.floor(t*20)%2===0;
-    if(blink){ ctx.restore(); return; }
+    // smooth alpha pulse instead of a hard on/off blink, so invulnerability
+    // feedback doesn't flash at a rate that could bother photosensitive players
+    if(player.invuln>0) ctx.globalAlpha = 0.55 + 0.35*Math.sin(t*10);
     ctx.translate(player.x, player.y);
     if(player.facing<0){ ctx.translate(player.w,0); ctx.scale(-1,1); }
     const w=player.w, h=player.h;
@@ -1235,8 +1392,18 @@
 
   function drawHUD(){
     ctx.setTransform(1,0,0,1,0,0);
-    ctx.font = `${13*Math.min(scaleX,scaleY)}px 'Press Start 2P', monospace`;
+    // the page is dir="rtl" (canvas inherits it); force ltr so this Latin-digit
+    // HUD text isn't right-anchored/clipped off the canvas's left edge
+    ctx.direction = 'ltr';
+    ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
+
+    // dark backing plaque behind the text for reliable WCAG-AA contrast against any sky color
+    ctx.fillStyle = 'rgba(10,6,26,0.78)';
+    roundRectPath(6*scaleX, 6*scaleY, 150*scaleX, 46*scaleY, 8*scaleX);
+    ctx.fill();
+
+    ctx.font = `${13*Math.min(scaleX,scaleY)}px 'Press Start 2P', monospace`;
     ctx.fillStyle = '#ffcc33';
     ctx.shadowColor = 'rgba(0,0,0,0.6)';
     ctx.shadowBlur = 4;
@@ -1257,7 +1424,7 @@
       ctx.lineTo(hx+9*scaleX, hy+1*scaleY);
       ctx.fill();
     };
-    for(let i=0;i<3;i++) heart(i);
+    for(let i=0;i<MAX_LIVES;i++) heart(i);
     ctx.shadowBlur = 0;
   }
 
@@ -1266,7 +1433,7 @@
   function frame(now){
     let dt = (now-last)/1000;
     last = now;
-    dt = Math.min(dt, 1/30);
+    dt = Math.min(dt, 1/60); // clamp so a slow frame slows the game instead of tunneling through thin platforms
     update(dt);
     draw();
     requestAnimationFrame(frame);
@@ -1276,6 +1443,7 @@
 
   resize();
   setOverlay('intro');
+  updateChrome();
   requestAnimationFrame(frame);
 })();
 </script>
