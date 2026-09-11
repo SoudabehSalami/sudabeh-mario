@@ -357,7 +357,7 @@
 
     <div class="overlay overlay-split" id="introOverlay">
       <div class="split-row">
-        <div class="split-art" id="introArt" style="background-image:url('img/intro-mushroom.jpg')" aria-hidden="true"></div>
+        <div class="split-art" id="introArt" style="background-image:url('img/intro-mouse.jpg')" aria-hidden="true"></div>
         <div class="split-text">
           <p class="eyebrow-mini">A TINY PLATFORMER</p>
           <p class="press-start">PRESS START</p>
@@ -892,6 +892,11 @@
         c.taken = true;
         coinCount++;
         score += 10;
+        if(!player.big){
+          player.big = true;
+          player.h = 46;
+          player.y -= 10;
+        }
         sfx.coin();
       }
     }
