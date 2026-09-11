@@ -154,7 +154,82 @@
     gap:12px;
     padding:22px;
     text-align:center;
+    overflow-y:auto;
   }
+  .score-submit{
+    display:flex;
+    gap:8px;
+    width:100%;
+    max-width:280px;
+  }
+  .score-submit input{
+    flex:1;
+    min-width:0;
+    font-family:'Vazirmatn',sans-serif;
+    font-size:13px;
+    padding:8px 12px;
+    border-radius:999px;
+    border:1px solid rgba(52,229,255,.35);
+    background:rgba(10,6,26,.5);
+    color:var(--text-main);
+  }
+  .score-submit input::placeholder{color:var(--text-dim);}
+  .score-submit button.arcade-btn{
+    padding:8px 16px;
+    font-size:13px;
+    white-space:nowrap;
+  }
+  .leaderboard{
+    width:100%;
+    max-width:280px;
+    background:rgba(10,6,26,.4);
+    border:1px solid rgba(255,204,51,.25);
+    border-radius:12px;
+    padding:8px 10px;
+  }
+  .leaderboard .lb-title{
+    font-family:'Press Start 2P',monospace;
+    font-size:9px;
+    color:var(--neon-gold);
+    margin:0 0 6px;
+    letter-spacing:.06em;
+  }
+  .lb-list{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    max-height:110px;
+    overflow-y:auto;
+  }
+  .lb-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:12px;
+    color:var(--text-main);
+  }
+  .lb-row .lb-rank{
+    font-family:'Press Start 2P',monospace;
+    font-size:9px;
+    color:var(--neon-cyan);
+    width:22px;
+    flex:none;
+  }
+  .lb-row .lb-name{
+    flex:1;
+    min-width:0;
+    text-align:left;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .lb-row .lb-score{
+    font-family:'Press Start 2P',monospace;
+    font-size:10px;
+    color:var(--neon-gold);
+    flex:none;
+  }
+  .lb-empty{color:var(--text-dim);font-size:11.5px;}
   .split-text .eyebrow-mini{
     font-family:'Press Start 2P',monospace;
     font-size:8px;
@@ -186,6 +261,11 @@
     .overlay-split button.arcade-btn{padding:8px 20px;font-size:13px;}
     .overlay-split .stat-row{font-size:9px;gap:10px;}
     .overlay-split h2{font-size:13px;}
+    .split-art{height:22%;}
+    .score-submit input{font-size:12px;padding:6px 10px;}
+    .score-submit button.arcade-btn{padding:6px 12px;font-size:12px;}
+    .leaderboard{padding:6px 8px;}
+    .lb-list{max-height:70px;}
   }
 
   button.arcade-btn{
@@ -261,6 +341,7 @@
     .hint-row{font-size:12px;}
   }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 </head>
 <body>
 
@@ -294,6 +375,14 @@
           <div class="stat-row">
             <div>Score <span class="v" id="winScore">0</span></div>
             <div>Coins <span class="v" id="winCoins">0</span></div>
+          </div>
+          <div class="score-submit">
+            <input type="text" id="playerName" maxlength="16" placeholder="Your name" autocomplete="off">
+            <button class="arcade-btn" id="submitScore">Submit</button>
+          </div>
+          <div class="leaderboard">
+            <p class="lb-title">TOP SCORES</p>
+            <div class="lb-list" id="leaderboardList"><p class="lb-empty">Loading…</p></div>
           </div>
           <button class="arcade-btn" id="winRestart">Play Again</button>
         </div>
@@ -335,6 +424,93 @@
 <script>
 (function(){
   "use strict";
+
+  // ---------- leaderboard (Supabase) ----------
+  const LB_TABLE = 'leaderboard';
+  const sbClient = (window.supabase && window.supabase.createClient)
+    ? window.supabase.createClient(
+        'https://nxorhmedolpouxhkthei.supabase.co',
+        'sb_publishable_dCSE9SsJU3Lg7IzVgfnLTQ_Y0Cu1reG'
+      )
+    : null;
+
+  const leaderboardListEl = document.getElementById('leaderboardList');
+  const playerNameInput = document.getElementById('playerName');
+  const submitScoreBtn = document.getElementById('submitScore');
+
+  function renderLeaderboard(rows){
+    if(!leaderboardListEl) return;
+    leaderboardListEl.innerHTML = '';
+    if(!rows || rows.length===0){
+      const p = document.createElement('p');
+      p.className = 'lb-empty';
+      p.textContent = 'No scores yet — be the first!';
+      leaderboardListEl.appendChild(p);
+      return;
+    }
+    rows.forEach((row, i)=>{
+      const rankEl = document.createElement('span');
+      rankEl.className = 'lb-rank';
+      rankEl.textContent = '#' + (i+1);
+
+      const nameEl = document.createElement('span');
+      nameEl.className = 'lb-name';
+      nameEl.textContent = row.name || 'Player';
+
+      const scoreEl = document.createElement('span');
+      scoreEl.className = 'lb-score';
+      scoreEl.textContent = row.score;
+
+      const rowEl = document.createElement('div');
+      rowEl.className = 'lb-row';
+      rowEl.append(rankEl, nameEl, scoreEl);
+      leaderboardListEl.appendChild(rowEl);
+    });
+  }
+
+  async function loadLeaderboard(){
+    if(!leaderboardListEl) return;
+    if(!sbClient){
+      leaderboardListEl.innerHTML = '<p class="lb-empty">Leaderboard unavailable</p>';
+      return;
+    }
+    leaderboardListEl.innerHTML = '<p class="lb-empty">Loading…</p>';
+    try{
+      const { data, error } = await sbClient
+        .from(LB_TABLE)
+        .select('name,score')
+        .order('score', { ascending:false })
+        .limit(10);
+      if(error) throw error;
+      renderLeaderboard(data);
+    }catch(e){
+      leaderboardListEl.innerHTML = '<p class="lb-empty">Leaderboard unavailable</p>';
+    }
+  }
+
+  async function submitCurrentScore(){
+    if(!sbClient){
+      submitScoreBtn.textContent = 'Unavailable';
+      submitScoreBtn.disabled = true;
+      return;
+    }
+    const rawName = (playerNameInput && playerNameInput.value || '').trim();
+    const name = (rawName || 'Player').slice(0, 16);
+    submitScoreBtn.disabled = true;
+    submitScoreBtn.textContent = '…';
+    try{
+      await sbClient.from(LB_TABLE).insert({ name, score, coins: coinCount });
+      submitScoreBtn.textContent = 'Submitted';
+      await loadLeaderboard();
+    }catch(e){
+      submitScoreBtn.textContent = 'Failed';
+      submitScoreBtn.disabled = false;
+    }
+  }
+
+  if(submitScoreBtn){
+    submitScoreBtn.addEventListener('click', submitCurrentScore);
+  }
 
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
@@ -760,6 +936,8 @@
       document.getElementById('winCoins').textContent = coinCount;
       setOverlay('win');
       sfx.win();
+      if(submitScoreBtn){ submitScoreBtn.disabled = false; submitScoreBtn.textContent = 'Submit'; }
+      loadLeaderboard();
     }
 
     camX = Math.max(0, Math.min(LEVEL_W - LW, player.x - LW*0.4));
