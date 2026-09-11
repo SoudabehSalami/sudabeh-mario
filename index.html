@@ -126,25 +126,26 @@
   }
   .overlay .stat-row span.v{color:var(--neon-cyan);}
 
-  .overlay-intro{z-index:1;padding:0;gap:0;}
-  .intro-split{
+  .overlay-split{z-index:1;padding:0;gap:0;}
+  .split-row{
     display:flex;
     width:100%;
     height:100%;
     align-items:stretch;
   }
-  .intro-art{
+  .split-art{
     position:relative;
     width:44%;
     flex:none;
     overflow:hidden;
-    background:
-      url('img/intro-mushroom.jpg') center/cover no-repeat,
-      linear-gradient(180deg, var(--cabinet-2), var(--cabinet-1) 75%);
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
+    background-color:var(--cabinet-1);
     border-right:1px solid rgba(52,229,255,.25);
     box-shadow:6px 0 20px rgba(0,0,0,.25);
   }
-  .intro-text{
+  .split-text{
     flex:1;
     display:flex;
     flex-direction:column;
@@ -154,7 +155,7 @@
     padding:22px;
     text-align:center;
   }
-  .intro-text .eyebrow-mini{
+  .split-text .eyebrow-mini{
     font-family:'Press Start 2P',monospace;
     font-size:8px;
     letter-spacing:.16em;
@@ -176,13 +177,15 @@
     .press-start{animation:none;}
   }
   @media (max-width:480px){
-    .intro-split{flex-direction:column;}
-    .intro-art{width:100%;height:30%;border-right:none;border-bottom:1px solid rgba(52,229,255,.25);}
-    .intro-text{padding:8px 14px;gap:6px;}
-    .intro-text .eyebrow-mini{display:none;}
+    .split-row{flex-direction:column;}
+    .split-art{width:100%;height:30%;border-right:none;border-bottom:1px solid rgba(52,229,255,.25);}
+    .split-text{padding:8px 14px;gap:6px;}
+    .split-text .eyebrow-mini{display:none;}
     .press-start{font-size:11px;}
     .intro-sub{font-size:11.5px;line-height:1.4;}
-    .overlay-intro button.arcade-btn{padding:8px 20px;font-size:13px;}
+    .overlay-split button.arcade-btn{padding:8px 20px;font-size:13px;}
+    .overlay-split .stat-row{font-size:9px;gap:10px;}
+    .overlay-split h2{font-size:13px;}
   }
 
   button.arcade-btn{
@@ -271,10 +274,10 @@
   <div class="screen-wrap" id="screenWrap">
     <canvas id="game"></canvas>
 
-    <div class="overlay overlay-intro" id="introOverlay">
-      <div class="intro-split">
-        <div class="intro-art" id="introArt" aria-hidden="true"></div>
-        <div class="intro-text">
+    <div class="overlay overlay-split" id="introOverlay">
+      <div class="split-row">
+        <div class="split-art" id="introArt" style="background-image:url('img/intro-mushroom.jpg')" aria-hidden="true"></div>
+        <div class="split-text">
           <p class="eyebrow-mini">A TINY PLATFORMER</p>
           <p class="press-start">PRESS START</p>
           <p class="intro-sub">Hop across platforms, dodge the crawlers, and reach the flag.</p>
@@ -283,22 +286,32 @@
       </div>
     </div>
 
-    <div class="overlay" id="winOverlay">
-      <h2>🏁 Level Complete!</h2>
-      <div class="stat-row">
-        <div>Score <span class="v" id="winScore">0</span></div>
-        <div>Coins <span class="v" id="winCoins">0</span></div>
+    <div class="overlay overlay-split" id="winOverlay">
+      <div class="split-row">
+        <div class="split-art" style="background-image:url('img/win-mushroom.jpg')" aria-hidden="true"></div>
+        <div class="split-text">
+          <h2>🏁 Level Complete!</h2>
+          <div class="stat-row">
+            <div>Score <span class="v" id="winScore">0</span></div>
+            <div>Coins <span class="v" id="winCoins">0</span></div>
+          </div>
+          <button class="arcade-btn" id="winRestart">Play Again</button>
+        </div>
       </div>
-      <button class="arcade-btn" id="winRestart">Play Again</button>
     </div>
 
-    <div class="overlay" id="loseOverlay">
-      <h2>💀 You Died</h2>
-      <p>The crawlers got you</p>
-      <div class="stat-row">
-        <div>Score <span class="v" id="loseScore">0</span></div>
+    <div class="overlay overlay-split" id="loseOverlay">
+      <div class="split-row">
+        <div class="split-art" style="background-image:url('img/lose-mushroom.jpg')" aria-hidden="true"></div>
+        <div class="split-text">
+          <h2>💀 You Died</h2>
+          <p>The crawlers got you</p>
+          <div class="stat-row">
+            <div>Score <span class="v" id="loseScore">0</span></div>
+          </div>
+          <button class="arcade-btn" id="loseRestart">Try Again</button>
+        </div>
       </div>
-      <button class="arcade-btn" id="loseRestart">Try Again</button>
     </div>
 
     <div class="touch-controls" id="touchControls">
