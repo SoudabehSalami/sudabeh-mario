@@ -126,67 +126,94 @@
   }
   .overlay .stat-row span.v{color:var(--neon-cyan);}
 
-  .overlay-intro{z-index:1;}
-  .intro-scene{
-    position:absolute;
-    inset:0;
+  .overlay-intro{z-index:1;padding:0;gap:0;}
+  .intro-split{
+    display:flex;
+    width:100%;
+    height:100%;
+    align-items:stretch;
+  }
+  .intro-art{
+    position:relative;
+    width:44%;
+    flex:none;
     overflow:hidden;
-    z-index:0;
+    background:linear-gradient(180deg, var(--cabinet-2), var(--cabinet-1) 75%);
+    border-right:1px solid rgba(52,229,255,.25);
+    box-shadow:6px 0 20px rgba(0,0,0,.25);
   }
-  .intro-scene .i-glow{
+  .intro-art .i-glow{
     position:absolute;
-    inset:-20% -10% auto -10%;
+    inset:-20% -20% auto -20%;
     height:70%;
-    background:
-      radial-gradient(ellipse 60% 60% at 50% 30%, rgba(255,62,154,.28), transparent 65%),
-      radial-gradient(ellipse 50% 50% at 70% 55%, rgba(52,229,255,.2), transparent 70%);
+    background:radial-gradient(ellipse 70% 70% at 50% 30%, rgba(255,62,154,.28), transparent 65%);
   }
-  .intro-scene .i-star{
+  .intro-art .i-star{
     position:absolute;
     width:3px;height:3px;border-radius:50%;
     background:var(--neon-cyan);
     box-shadow:0 0 6px 1px rgba(52,229,255,.8);
   }
-  .intro-scene .i-hill{
-    position:absolute;left:-8%;right:-8%;
+  .intro-art .i-hill{
+    position:absolute;left:-12%;right:-12%;bottom:-8%;height:40%;
+    background:var(--cabinet-1);
     border-radius:50% 50% 0 0/100% 100% 0 0;
   }
-  .intro-scene .i-hill.h1{height:38%;bottom:-6%;background:var(--cabinet-2);}
-  .intro-scene .i-hill.h2{height:22%;bottom:-8%;background:var(--cabinet-1);}
-  .intro-scene .i-cap{
+  .intro-art .i-cap{
     position:absolute;
-    width:58px;height:40px;
-    bottom:26%;left:50%;
-    margin-left:-29px;
+    width:34%;aspect-ratio:1.5/1;
+    bottom:24%;left:28%;
     border-radius:50% 50% 8% 8%/65% 65% 8% 8%;
     background:linear-gradient(180deg, var(--neon-pink), #c21f74);
-    box-shadow:0 0 18px rgba(255,62,154,.55);
+    box-shadow:0 0 16px rgba(255,62,154,.5);
   }
-  .intro-scene .i-stem{
+  .intro-art .i-stem{
     position:absolute;
-    width:16px;height:24px;
-    bottom:16%;left:50%;
-    margin-left:-8px;
+    width:11%;aspect-ratio:.55/1;
+    bottom:12%;left:42%;
     border-radius:6px;
     background:var(--neon-cyan);
-    box-shadow:0 0 12px rgba(52,229,255,.5);
+    box-shadow:0 0 10px rgba(52,229,255,.45);
   }
-
-  .press-start{
-    position:relative;
-    z-index:1;
+  .intro-text{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:12px;
+    padding:22px;
+    text-align:center;
+  }
+  .intro-text .eyebrow-mini{
     font-family:'Press Start 2P',monospace;
-    font-size:clamp(14px,3.4vw,20px);
+    font-size:8px;
+    letter-spacing:.16em;
+    color:var(--neon-cyan);
+    text-shadow:0 0 8px rgba(52,229,255,.7);
+    margin:0;
+  }
+  .press-start{
+    font-family:'Press Start 2P',monospace;
+    font-size:clamp(14px,2.6vw,20px);
     margin:0;
     color:var(--neon-gold);
     text-shadow:0 0 14px rgba(255,204,51,.6);
     animation:blinkText 1.1s steps(1,end) infinite;
   }
-  .intro-sub{position:relative;z-index:1;}
-  .overlay-intro button.arcade-btn{position:relative;z-index:1;}
+  .intro-sub{max-width:26ch;}
   @keyframes blinkText{50%{opacity:.25;}}
   @media (prefers-reduced-motion: reduce){
     .press-start{animation:none;}
+  }
+  @media (max-width:480px){
+    .intro-split{flex-direction:column;}
+    .intro-art{width:100%;height:30%;border-right:none;border-bottom:1px solid rgba(52,229,255,.25);}
+    .intro-text{padding:8px 14px;gap:6px;}
+    .intro-text .eyebrow-mini{display:none;}
+    .press-start{font-size:11px;}
+    .intro-sub{font-size:11.5px;line-height:1.4;}
+    .overlay-intro button.arcade-btn{padding:8px 20px;font-size:13px;}
   }
 
   button.arcade-btn{
@@ -276,20 +303,23 @@
     <canvas id="game"></canvas>
 
     <div class="overlay overlay-intro" id="introOverlay">
-      <div class="intro-scene" id="introScene" aria-hidden="true">
-        <div class="i-glow"></div>
-        <div class="i-star" style="top:16%;left:18%;"></div>
-        <div class="i-star" style="top:26%;left:80%;"></div>
-        <div class="i-star" style="top:12%;left:52%;"></div>
-        <div class="i-star" style="top:40%;left:68%;"></div>
-        <div class="i-hill h1"></div>
-        <div class="i-hill h2"></div>
-        <div class="i-stem"></div>
-        <div class="i-cap"></div>
+      <div class="intro-split">
+        <div class="intro-art" id="introArt" aria-hidden="true">
+          <div class="i-glow"></div>
+          <div class="i-star" style="top:14%;left:20%;"></div>
+          <div class="i-star" style="top:24%;left:74%;"></div>
+          <div class="i-star" style="top:40%;left:30%;"></div>
+          <div class="i-hill"></div>
+          <div class="i-cap"></div>
+          <div class="i-stem"></div>
+        </div>
+        <div class="intro-text">
+          <p class="eyebrow-mini">A TINY PLATFORMER</p>
+          <p class="press-start">PRESS START</p>
+          <p class="intro-sub">Hop across platforms, dodge the crawlers, and reach the flag.</p>
+          <button class="arcade-btn" id="startBtn">Start Game</button>
+        </div>
       </div>
-      <p class="press-start">PRESS START</p>
-      <p class="intro-sub">Hop across platforms, dodge the crawlers, and reach the flag.</p>
-      <button class="arcade-btn" id="startBtn">Start Game</button>
     </div>
 
     <div class="overlay" id="winOverlay">
