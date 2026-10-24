@@ -1,0 +1,5 @@
+data/*.sqlite*
+data/receipts/
+uploads/*
+!uploads/.htaccess
+!uploads/.gitkeep
