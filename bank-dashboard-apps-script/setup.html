@@ -1,0 +1,851 @@
+<title>نصب داشبورد بانک‌ها</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@400..700&family=Vazirmatn:wght@400..700&display=swap">
+<style>
+/* layout: one reading column of numbered setup steps; each file is a code card with a copy button */
+:root{--bg:#f9fafb;--card:#ffffff;--fg:#111827;--muted:#4b5563;--line:#e5e7eb;--teal:#2f9fb0;--purple:#5e4f9a;--codebg:#f3f4f6;--ok:#1f7a5a;
+--sans:"Vazirmatn","Jost",Tahoma,sans-serif;--latin:"Jost","Vazirmatn",sans-serif;--mono:ui-monospace,"Cascadia Mono",Consolas,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f0b2f;--card:#1b1446;--fg:#ffffff;--muted:#a7a3c2;--line:#2f2566;--teal:#63c3d1;--purple:#7c6eb0;--codebg:#140f38;--ok:#7fe0c0;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f0b2f;--card:#1b1446;--fg:#ffffff;--muted:#a7a3c2;--line:#2f2566;--teal:#63c3d1;--purple:#7c6eb0;--codebg:#140f38;--ok:#7fe0c0;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15px;line-height:1.8}
+.wrap{max-width:820px;margin:0 auto;padding-block:32px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:22px}
+h1{font-weight:700;font-size:28px;line-height:1.3;margin:0;text-wrap:balance}
+.lede{margin:0;color:var(--muted)}
+.step{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:grid;grid-template-columns:auto 1fr;gap:14px;min-width:0}
+.num{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-family:var(--latin);font-weight:600;color:#fff;background:linear-gradient(135deg,var(--purple),var(--teal))}
+.step h2{margin:2px 0 6px;font-size:17px}
+.step > div{min-width:0}
+.step ol,.step ul{margin:0;padding-inline-start:20px}
+.step p{margin:0 0 6px}
+code,.k{font-family:var(--latin);direction:ltr;unicode-bidi:isolate;background:var(--codebg);border:1px solid var(--line);border-radius:6px;padding:0 6px;font-size:13px}
+.file{margin-top:10px;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.fh{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 10px;background:var(--codebg);border-bottom:1px solid var(--line)}
+.fn{font-family:var(--latin);font-weight:600;direction:ltr}
+.copy{font:inherit;font-size:13px;cursor:pointer;border:0;border-radius:999px;padding:5px 14px;color:#fff;background:linear-gradient(135deg,var(--purple),var(--teal))}
+.copy:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+.copy.done{background:var(--ok)}
+textarea{display:block;width:100%;height:150px;border:0;resize:vertical;background:var(--card);color:var(--fg);font-family:var(--mono);font-size:12px;line-height:1.5;padding:10px;direction:ltr}
+.note{color:var(--muted);font-size:13px}
+@media (max-width:480px){.step{grid-template-columns:1fr}}
+</style>
+<div class="wrap">
+  <h1>نصب داشبورد بانک‌ها روی ویندوز</h1>
+  <p class="lede">این نسخه داخل حساب گوگل خودتان اجرا می‌شود و برای دیدنش به Claude نیازی نیست. حدود ۵ دقیقه طول می‌کشد. مرحله‌ها را به ترتیب انجام دهید.</p>
+
+  <section class="step"><span class="num">1</span><div>
+    <h2>پروژه بسازید</h2>
+    <ol><li><span class="k">script.google.com</span> را باز کنید و <b>New project</b> را بزنید.</li>
+    <li>بالای صفحه روی <b>Untitled project</b> بزنید و اسمش را «داشبورد بانک‌ها» بگذارید.</li></ol>
+  </div></section>
+
+  <section class="step"><span class="num">2</span><div>
+    <h2>کد اصلی را بگذارید</h2>
+    <p>فایل <code>Code.gs</code> را باز کنید، هرچه داخلش هست پاک کنید و این را جایش بچسبانید:</p>
+    <div class="file"><div class="fh"><span class="fn">Code.gs</span><button class="copy" type="button" data-for="t-code" id="b-code">کپی</button></div><textarea id="t-code" readonly spellcheck="false">/**
+ * داشبورد بانک‌ها — Google Apps Script web app
+ * فایل‌ها: Code.gs (همین فایل) و Index.html
+ * هر بار که صفحه باز یا به‌روز می‌شود، تب‌های حساب از دو فایل گوگل‌شیت خوانده می‌شوند.
+ */
+const RIAL_SS = &#x27;1V2OTZRzvdZuNcqNYmeR1WQB8FBrJNbQ1Rq8nfkqCnhw&#x27;; // Bugloos ACs 1405
+const FX_SS = &#x27;1ndbrVJyqDGkB9J0qYEjqBZDI_0SgCpWotuiBOLB_y3I&#x27;;   // Revolut
+
+// [dataset id, tab name, spreadsheet, first data row]
+const ACCOUNTS = [
+  [&#x27;rial_AR&#x27;, &quot;A(R)&quot;, &#x27;RIAL&#x27;, 5],
+  [&#x27;rial_BR&#x27;, &quot;B(R)&quot;, &#x27;RIAL&#x27;, 5],
+  [&#x27;rial_CR&#x27;, &quot;C(R)&quot;, &#x27;RIAL&#x27;, 5],
+  [&#x27;rial_AT&#x27;, &quot;A(T)&quot;, &#x27;RIAL&#x27;, 5],
+  [&#x27;rial_BTG&#x27;, &quot;B(T.G)&quot;, &#x27;RIAL&#x27;, 5],
+  [&#x27;rial_CTG&#x27;, &quot;C(T.G)&quot;, &#x27;RIAL&#x27;, 5],
+  [&#x27;rial_armin&#x27;, &quot;Armin&quot;, &#x27;RIAL&#x27;, 5],
+  [&#x27;rial_armita&#x27;, &quot;Armita&quot;, &#x27;RIAL&#x27;, 5],
+  [&#x27;rial_nariman&#x27;, &quot;Nariman&quot;, &#x27;RIAL&#x27;, 5],
+  [&#x27;rial_sadegh&#x27;, &quot;Sadegh&quot;, &#x27;RIAL&#x27;, 5],
+  [&#x27;rial_heeman&#x27;, &quot;Heeman&quot;, &#x27;RIAL&#x27;, 5],
+  [&#x27;rial_alireza&#x27;, &quot;Alireza&quot;, &#x27;RIAL&#x27;, 5],
+  [&#x27;rial_samaneh&#x27;, &quot;Samaneh&quot;, &#x27;RIAL&#x27;, 5],
+  [&#x27;rial_mhmd&#x27;, &quot;Mhmd&quot;, &#x27;RIAL&#x27;, 5],
+  [&#x27;rial_tsob&#x27;, &quot;Tankhah Sobhaneh&quot;, &#x27;RIAL&#x27;, 5],
+  [&#x27;rial_tbirad&#x27;, &quot;Tankhah Birad&quot;, &#x27;RIAL&#x27;, 5],
+  [&#x27;rial_thr&#x27;, &quot;Tankhah HR&quot;, &#x27;RIAL&#x27;, 5],
+  [&#x27;rial_melli&#x27;, &quot;Soudabeh Melli&quot;, &#x27;RIAL&#x27;, 5],
+  [&#x27;rial_foroosh&#x27;, &quot;Foroosh&quot;, &#x27;RIAL&#x27;, 5],
+  [&#x27;rial_sandogh&#x27;, &quot;Sandogh&quot;, &#x27;RIAL&#x27;, 5],
+  [&#x27;eur_revolut&#x27;, &quot;Revolut1&quot;, &#x27;FX&#x27;, 2],
+  [&#x27;eur_abn&#x27;, &quot;ABN&quot;, &#x27;FX&#x27;, 2],
+  [&#x27;eur_abnh&#x27;, &quot;ABN Bugloos Holding &quot;, &#x27;FX&#x27;, 2],
+  [&#x27;eur_ics&#x27;, &quot;ICS&quot;, &#x27;FX&#x27;, 2],
+  [&#x27;eur_zeraat&#x27;, &quot;Zeraat Euro&quot;, &#x27;FX&#x27;, 2],
+  [&#x27;try_zeraat&#x27;, &quot;Zeraat lir&quot;, &#x27;FX&#x27;, 2]
+];
+
+function doGet() {
+  return HtmlService.createHtmlOutputFromFile(&#x27;Index&#x27;)
+    .setTitle(&#x27;داشبورد بانک‌ها&#x27;)
+    .addMetaTag(&#x27;viewport&#x27;, &#x27;width=device-width, initial-scale=1&#x27;);
+}
+
+function getData() {
+  const books = { RIAL: SpreadsheetApp.openById(RIAL_SS), FX: SpreadsheetApp.openById(FX_SS) };
+  const data = {};
+  const missing = [];
+  ACCOUNTS.forEach(function (a) {
+    const id = a[0], tab = a[1], book = books[a[2]], first = a[3];
+    const sh = book.getSheetByName(tab);
+    if (!sh) { missing.push(tab.trim()); return; }
+    const last = sh.getLastRow();
+    const values = last &gt;= first ? sh.getRange(first, 1, last - first + 1, 8).getDisplayValues() : [];
+    data[id] = { range: &quot;&#x27;&quot; + tab + &quot;&#x27;!A&quot; + first + &#x27;:H&#x27;, values: values };
+  });
+  return JSON.stringify({ data: data, missing: missing });
+}
+</textarea></div>
+  </div></section>
+
+  <section class="step"><span class="num">3</span><div>
+    <h2>فایل صفحه را اضافه کنید</h2>
+    <p>کنار <b>Files</b> روی <b>+</b> بزنید، <b>HTML</b> را انتخاب کنید و اسمش را دقیقاً <code>Index</code> بگذارید. محتوای پیش‌فرض را پاک کنید و این را بچسبانید:</p>
+    <div class="file"><div class="fh"><span class="fn">Index.html</span><button class="copy" type="button" data-for="t-index" id="b-index">کپی</button></div><textarea id="t-index" readonly spellcheck="false">&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;fa&quot; dir=&quot;rtl&quot;&gt;
+&lt;head&gt;
+&lt;base target=&quot;_top&quot;&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;title&gt;داشبورد بانک‌ها&lt;/title&gt;
+&lt;link rel=&quot;preconnect&quot; href=&quot;https://fonts.googleapis.com&quot;&gt;
+&lt;link rel=&quot;preconnect&quot; href=&quot;https://fonts.gstatic.com&quot; crossorigin&gt;
+&lt;link href=&quot;https://fonts.googleapis.com/css2?family=Jost:wght@400..700&amp;family=Vazirmatn:wght@400..700&amp;display=swap&quot; rel=&quot;stylesheet&quot;&gt;
+&lt;style&gt;
+:root{--c1:#2f9fb0;--c2:#5e4f9a;--c3:#8a3a8f;--c4:#6b7280;
+--color-bg:#f9fafb;--color-panel:#ffffff;--color-fg:#111827;--color-fg-muted:#4b5563;--color-border-line:#e5e7eb;
+--color-ok:#2f9fb0;--color-warn:#a15c00;--color-bad:#c62828;
+--cds-chart-grid:#e5e7eb;--cds-text-secondary:#4b5563;--cds-surface-popover:#ffffff;--cds-border:#e5e7eb;--cds-shadow-popover:0 8px 24px rgba(17,24,39,.12);
+--font-anthropic-sans:&quot;Jost&quot;,&quot;Vazirmatn&quot;,Tahoma,sans-serif;--font-anthropic-serif:&quot;Jost&quot;,&quot;Vazirmatn&quot;,Tahoma,sans-serif;
+--cds-font-size-caption:12px;--cds-font-size-body:14px;--cds-font-size-heading:18px;--cds-font-size-title:30px;--cds-font-weight-medium:500;
+--cds-gap-xs:4px;--cds-gap-sm:8px;--cds-gap-md:14px;--cds-gap-lg:20px;--cds-gap-xl:28px;
+--cds-pad-xs:4px;--cds-pad-sm:8px;--cds-pad-md:12px;--cds-pad-lg:18px;--cds-pad-xl:24px;--cds-radius:12px;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--c1:#63c3d1;--c2:#7c6eb0;--c3:#b46fb9;--c4:#9ca3af;
+--color-bg:#0f0b2f;--color-panel:#1b1446;--color-fg:#ffffff;--color-fg-muted:#a7a3c2;--color-border-line:#2f2566;
+--color-ok:#63c3d1;--color-warn:#ffb020;--color-bad:#ff6b6b;
+--cds-chart-grid:#2f2566;--cds-text-secondary:#a7a3c2;--cds-surface-popover:#241b57;--cds-border:#3a2f78;--cds-shadow-popover:0 10px 28px rgba(0,0,0,.45);color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--color-bg);color:var(--color-fg);font-family:var(--font-anthropic-sans);font-size:var(--cds-font-size-body)}
+.bk-wrap{max-width:1280px;margin:0 auto;padding:24px max(16px,env(safe-area-inset-left,0px)) 40px max(16px,env(safe-area-inset-right,0px))}
+.dash-select{font:inherit;color:var(--color-fg);background-color:var(--color-panel);border:1px solid var(--color-border-line);border-radius:999px;padding:4px 12px}
+.bk-upd{margin:8px 0 0;display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:var(--color-fg-muted);font-size:var(--cds-font-size-caption)}
+.bk-refresh{font:inherit;cursor:pointer;border:1px solid color-mix(in srgb,var(--c1) 45%,transparent);background:color-mix(in srgb,var(--c1) 12%,transparent);color:var(--color-fg);border-radius:999px;padding:4px 12px}
+.bk-refresh:disabled{opacity:.5;cursor:wait}
+
+.bk{--bk-accent:var(--color-fg);color:var(--color-fg);display:flex;flex-direction:column;gap:var(--cds-gap-xl);font-family:var(--font-anthropic-sans),Jost,Vazirmatn,Tahoma,sans-serif}
+.bk-n,.bk-kv,.bk-table .num,.bk-bar-v{font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate}
+.bk-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:var(--cds-gap-lg);padding-block:var(--cds-pad-sm)}
+.bk-eyebrow{margin:0 0 6px;font-size:var(--cds-font-size-caption);color:var(--color-fg-muted);display:flex;align-items:center;gap:8px}
+.bk-live{width:8px;height:8px;border-radius:50%;background:var(--bk-accent);box-shadow:0 0 0 4px color-mix(in srgb,var(--bk-accent) 22%,transparent)}
+.bk-title{font-family:var(--font-anthropic-serif);font-weight:600;font-size:var(--cds-font-size-title);letter-spacing:-0.01em;line-height:1.2;margin:0}
+.bk-sub{margin:6px 0 0;color:var(--color-fg-muted)}
+.bk-sub b{color:var(--color-fg);font-weight:var(--cds-font-weight-medium)}
+.bk-period{display:flex;flex-direction:column;gap:var(--cds-gap-sm);align-items:flex-end}
+.bk-seg{display:inline-flex;flex-wrap:wrap;gap:2px;padding:3px;background:var(--color-panel);border:1px solid var(--color-border-line);border-radius:999px}
+.bk-pre,.bk-tab{font:inherit;cursor:pointer;border:0;background:transparent;color:var(--color-fg-muted);border-radius:999px;padding:6px 14px;transition:background-color .15s,color .15s}
+.bk-pre:hover,.bk-tab:hover{color:var(--color-fg);background:color-mix(in srgb,var(--color-fg) 6%,transparent)}
+.bk-pre.is-on,.bk-tab.is-on{background:var(--bk-accent);color:var(--color-bg);font-weight:var(--cds-font-weight-medium)}
+.bk-pre:focus-visible,.bk-tab:focus-visible,.bk-clear:focus-visible,.bk-bar:focus-visible{outline:2px solid var(--bk-accent);outline-offset:2px}
+.bk-range{display:flex;flex-wrap:wrap;gap:var(--cds-gap-sm);color:var(--color-fg-muted);font-size:var(--cds-font-size-caption)}
+.bk-range label{display:flex;align-items:center;gap:6px}
+.bk-range input{font:inherit;color:var(--color-fg);background:var(--color-panel);border:1px solid var(--color-border-line);border-radius:999px;padding:4px 10px}
+.bk-tabs{align-self:flex-start}
+.bk-tab{padding:8px 22px;font-size:var(--cds-font-size-heading)}
+.bk-sec{display:flex;flex-direction:column;gap:var(--cds-gap-lg)}
+.bk-lede{margin:0;font-size:var(--cds-font-size-heading);line-height:1.9;max-width:72ch;color:var(--color-fg-muted)}
+.bk-lede b{color:var(--color-fg);font-weight:var(--cds-font-weight-medium)}
+.bk-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--cds-gap-md)}
+.bk-kpi{position:relative;overflow:hidden;background:var(--color-panel);border:1px solid var(--color-border-line);border-radius:var(--cds-radius);padding:var(--cds-pad-lg);display:flex;flex-direction:column;gap:6px;min-width:0}
+.bk-kpi-bal{background:linear-gradient(150deg,color-mix(in srgb,var(--bk-accent) 16%,var(--color-panel)) 0%,var(--color-panel) 70%);border-color:color-mix(in srgb,var(--bk-accent) 35%,var(--color-border-line))}
+.bk-kl{color:var(--color-fg-muted);font-size:var(--cds-font-size-caption);letter-spacing:.02em;display:flex;align-items:center;gap:6px}
+.bk-dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+.bk-dot-in{background:var(--bk-accent)}.bk-dot-out{background:var(--color-bad)}.bk-dot-net{background:var(--color-fg-muted)}.bk-dot-bal{background:var(--bk-accent)}
+.bk-kv{font-family:var(--font-anthropic-serif);font-weight:600;font-size:clamp(22px,3vw,30px);letter-spacing:-0.01em;text-align:right;overflow-wrap:anywhere;line-height:1.25}
+.bk-ks{color:var(--color-fg-muted);font-size:var(--cds-font-size-caption)}
+.bk-pos{color:var(--color-fg)}.bk-neg{color:var(--color-bad)}
+.bk-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:var(--cds-gap-md)}
+.bk-card{background:var(--color-panel);border:1px solid var(--color-border-line);border-radius:var(--cds-radius);padding:var(--cds-pad-lg);min-width:0;display:flex;flex-direction:column;gap:var(--cds-gap-sm)}
+.bk-card h3{margin:0;font-family:var(--font-anthropic-serif);font-size:var(--cds-font-size-heading);font-weight:600}
+.bk-note{margin:0;color:var(--color-fg-muted);font-size:var(--cds-font-size-caption);line-height:1.8}
+.bk-scroll{overflow-x:auto;max-height:560px;overflow-y:auto;margin-inline:calc(-1 * var(--cds-pad-sm));padding-inline:var(--cds-pad-sm)}
+.bk-table{width:100%;border-collapse:collapse;font-size:var(--cds-font-size-body)}
+.bk-table th{position:sticky;top:0;z-index:1;background:var(--color-panel);text-align:right;font-weight:var(--cds-font-weight-medium);color:var(--color-fg-muted);font-size:var(--cds-font-size-caption);padding:8px 10px;border-bottom:1px solid var(--color-border-line);white-space:nowrap}
+.bk-table td{padding:9px 10px;border-bottom:1px solid color-mix(in srgb,var(--color-border-line) 70%,transparent);vertical-align:top}
+.bk-table tbody tr{transition:background-color .12s}
+.bk-table tbody tr:hover{background:color-mix(in srgb,var(--color-fg) 4%,transparent)}
+.bk-table .num{text-align:left;white-space:nowrap}
+.bk-acc{font-weight:var(--cds-font-weight-medium);white-space:nowrap}
+.bk-balcell{position:relative;min-width:150px}
+.bk-balbar{display:block;height:3px;margin-top:5px;border-radius:2px;background:var(--bk-accent);opacity:.75}
+.bk-flag{display:inline-block;font-size:11px;font-weight:400;padding:1px 7px;border-radius:999px;color:var(--color-warn);background:color-mix(in srgb,var(--color-warn) 14%,transparent);cursor:help}
+.bk-tx td:last-child{min-width:240px;color:var(--color-fg-muted)}
+.bk-muted{color:var(--color-fg-muted)}
+.bk-bars{display:flex;flex-direction:column;gap:4px;position:relative;min-height:120px}
+.bk-bar{display:grid;grid-template-columns:minmax(96px,36%) 1fr auto;gap:10px;align-items:center;cursor:pointer;border-radius:8px;padding:5px 6px;font:inherit;color:inherit;background:none;border:0;text-align:right;transition:background-color .12s}
+.bk-bar:hover,.bk-bar.is-on{background:color-mix(in srgb,var(--bk-accent) 10%,transparent)}
+.bk-bar-l{font-size:var(--cds-font-size-caption);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bk-bar-t{height:10px;background:color-mix(in srgb,var(--color-fg) 7%,transparent);border-radius:999px;overflow:hidden;display:flex;justify-content:flex-start}
+.bk-bar-f{height:100%;border-radius:999px}
+.bk-bar-v{font-size:var(--cds-font-size-caption);white-space:nowrap;font-weight:var(--cds-font-weight-medium)}
+.bk-daily{position:relative;min-height:220px}
+.bk-legend{display:flex;gap:12px;align-items:center;font-size:var(--cds-font-size-caption);color:var(--color-fg-muted)}
+.bk-legend span{display:inline-flex;align-items:center;gap:6px}
+.bk-sw{display:inline-block;width:10px;height:10px;border-radius:3px}
+.bk-sw-in{background:var(--bk-accent)}.bk-sw-out{background:var(--color-bad)}
+.bk-daily text{fill:var(--cds-text-secondary);font-size:11px}
+.bk-tip{position:absolute;pointer-events:none;background:var(--cds-surface-popover);border:1px solid var(--cds-border);box-shadow:var(--cds-shadow-popover);border-radius:10px;padding:7px 11px;font-size:var(--cds-font-size-caption);white-space:nowrap;z-index:5}
+.bk-txhead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:var(--cds-gap-sm)}
+.bk-txctl{display:flex;flex-wrap:wrap;gap:var(--cds-gap-sm);align-items:center;font-size:var(--cds-font-size-caption)}
+.bk-chk{display:flex;gap:6px;align-items:center;cursor:pointer}
+.bk-chk input{accent-color:var(--bk-accent)}
+.bk-clear{font:inherit;font-size:var(--cds-font-size-caption);cursor:pointer;border:1px solid color-mix(in srgb,var(--bk-accent) 45%,transparent);background:color-mix(in srgb,var(--bk-accent) 12%,transparent);color:var(--color-fg);border-radius:999px;padding:4px 12px}
+.bk-foot{color:var(--color-fg-muted);font-size:var(--cds-font-size-caption);max-width:80ch;border-top:1px solid var(--color-border-line);padding-top:var(--cds-pad-md)}
+.bk-foot summary{cursor:pointer}
+.bk-foot p{line-height:1.9}
+.bk-fail{color:var(--color-fg-muted);font-size:var(--cds-font-size-caption)}
+
+/* themed boxes */
+.bk-kpi-in{background:linear-gradient(150deg,color-mix(in srgb,var(--bk-accent) 18%,var(--color-panel)) 0%,var(--color-panel) 75%);border-color:color-mix(in srgb,var(--bk-accent) 35%,var(--color-border-line))}
+.bk-kpi-out{background:linear-gradient(150deg,color-mix(in srgb,var(--color-bad) 14%,var(--color-panel)) 0%,var(--color-panel) 75%);border-color:color-mix(in srgb,var(--color-bad) 30%,var(--color-border-line))}
+.bk-kpi-net{background:linear-gradient(150deg,color-mix(in srgb,var(--bk-accent2) 18%,var(--color-panel)) 0%,var(--color-panel) 75%);border-color:color-mix(in srgb,var(--bk-accent2) 35%,var(--color-border-line))}
+.bk-kpi.bk-kpi-bal{background:linear-gradient(135deg,color-mix(in srgb,var(--bk-accent2) 70%,#000) 0%,color-mix(in srgb,var(--bk-accent3) 62%,#000) 100%);border-color:transparent}
+.bk-kpi.bk-kpi-bal .bk-kv,.bk-kpi.bk-kpi-bal .bk-kv.bk-neg{color:#fff}
+.bk-kpi.bk-kpi-bal .bk-kl,.bk-kpi.bk-kpi-bal .bk-ks{color:rgba(255,255,255,.82)}
+.bk-kpi.bk-kpi-bal .bk-dot-bal{background:#fff}
+.bk-kpi::after{content:&quot;&quot;;position:absolute;inset-inline-start:-30px;top:-30px;width:110px;height:110px;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--bk-tint,var(--bk-accent)) 22%,transparent) 0%,transparent 70%);pointer-events:none}
+.bk-kpi-out{--bk-tint:var(--color-bad)}.bk-kpi-net{--bk-tint:var(--bk-accent2)}.bk-kpi-bal{--bk-tint:#fff}
+.bk-card{--bk-tint:var(--bk-accent);background:linear-gradient(180deg,color-mix(in srgb,var(--bk-tint) 9%,var(--color-panel)) 0,var(--color-panel) 140px);border-color:color-mix(in srgb,var(--bk-tint) 22%,var(--color-border-line))}
+.bk-card-b{--bk-tint:var(--bk-accent2)}.bk-card-c{--bk-tint:var(--bk-accent3)}
+.bk-card h3{display:flex;align-items:center;gap:10px}
+.bk-card h3::before{content:&quot;&quot;;width:10px;height:10px;border-radius:3px;background:var(--bk-tint);box-shadow:0 0 0 4px color-mix(in srgb,var(--bk-tint) 20%,transparent);flex:none}
+.bk-card .bk-table th{background:color-mix(in srgb,var(--bk-tint) 7%,var(--color-panel))}
+.bk-card .bk-bar-f{background:linear-gradient(90deg,var(--bk-accent2),var(--bk-accent))!important}
+.bk-balbar{background:linear-gradient(90deg,var(--bk-accent2),var(--bk-accent))}
+.bk-pre.is-on,.bk-tab.is-on{background:linear-gradient(135deg,var(--bk-accent),color-mix(in srgb,var(--bk-accent) 55%,var(--bk-accent2)))}
+@media (max-width:560px){.bk-period{align-items:stretch}.bk-tab{padding:7px 14px}}
+@media (prefers-reduced-motion:reduce){.bk-pre,.bk-tab,.bk-bar,.bk-table tbody tr{transition:none}}
+@media print{.bk-sec[hidden]{display:flex!important}.bk-scroll{max-height:none}}
+&lt;/style&gt;
+&lt;script src=&quot;https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js&quot;&gt;&lt;/script&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;div class=&quot;bk-wrap&quot;&gt;
+&lt;div class=&quot;bk&quot; dir=&quot;rtl&quot; lang=&quot;fa&quot;&gt;
+  &lt;header class=&quot;bk-head&quot;&gt;
+    &lt;div&gt;
+      &lt;p class=&quot;bk-eyebrow&quot;&gt;&lt;span class=&quot;bk-live&quot;&gt;&lt;/span&gt;حساب‌های ریالی و ارزی · خوانده‌شده از گوگل‌شیت&lt;/p&gt;
+      &lt;h1 class=&quot;bk-title&quot;&gt;داشبورد بانک‌ها&lt;/h1&gt;
+      &lt;p class=&quot;bk-sub&quot;&gt;بازه: &lt;b data-draw=&quot;period-label&quot;&gt;—&lt;/b&gt;&lt;/p&gt;
+      &lt;p class=&quot;bk-upd&quot;&gt;&lt;button type=&quot;button&quot; id=&quot;bk-refresh&quot; class=&quot;bk-refresh&quot;&gt;↻ به‌روزرسانی&lt;/button&gt; &lt;span id=&quot;bk-updated&quot;&gt;در حال خواندن از گوگل‌شیت…&lt;/span&gt;&lt;/p&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;bk-period&quot; id=&quot;period&quot;&gt;
+      &lt;div class=&quot;bk-seg bk-presets&quot; role=&quot;group&quot; aria-label=&quot;بازه زمانی&quot;&gt;
+        &lt;button type=&quot;button&quot; class=&quot;bk-pre&quot; data-preset=&quot;today&quot;&gt;امروز&lt;/button&gt;
+        &lt;button type=&quot;button&quot; class=&quot;bk-pre&quot; data-preset=&quot;yesterday&quot;&gt;دیروز&lt;/button&gt;
+        &lt;button type=&quot;button&quot; class=&quot;bk-pre&quot; data-preset=&quot;7d&quot;&gt;۷ روز اخیر&lt;/button&gt;
+        &lt;button type=&quot;button&quot; class=&quot;bk-pre&quot; data-preset=&quot;month&quot;&gt;این ماه&lt;/button&gt;
+        &lt;button type=&quot;button&quot; class=&quot;bk-pre&quot; data-preset=&quot;year&quot;&gt;از ابتدای ۱۴۰۵&lt;/button&gt;
+      &lt;/div&gt;
+      &lt;div class=&quot;bk-range&quot;&gt;
+        &lt;label&gt;از &lt;input type=&quot;date&quot; id=&quot;p-from&quot; min=&quot;2023-01-01&quot; max=&quot;2030-12-31&quot;&gt;&lt;/label&gt;
+        &lt;label&gt;تا &lt;input type=&quot;date&quot; id=&quot;p-to&quot; min=&quot;2023-01-01&quot; max=&quot;2030-12-31&quot;&gt;&lt;/label&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/header&gt;
+  &lt;nav class=&quot;bk-seg bk-tabs&quot; role=&quot;tablist&quot; id=&quot;tabs&quot;&gt;
+    &lt;button type=&quot;button&quot; class=&quot;bk-tab&quot; data-tab=&quot;rial&quot; role=&quot;tab&quot;&gt;ریالی&lt;/button&gt;
+    &lt;button type=&quot;button&quot; class=&quot;bk-tab&quot; data-tab=&quot;eur&quot; role=&quot;tab&quot;&gt;یورو&lt;/button&gt;
+    &lt;button type=&quot;button&quot; class=&quot;bk-tab&quot; data-tab=&quot;try&quot; role=&quot;tab&quot;&gt;لیر&lt;/button&gt;
+  &lt;/nav&gt;
+  
+&lt;section class=&quot;bk-sec&quot; id=&quot;rial&quot;&gt;
+  &lt;p class=&quot;bk-lede&quot; data-read lang=&quot;fa&quot;&gt;در این بازه &lt;b class=&quot;bk-n&quot; data-draw=&quot;rial-lede-in&quot; data-source=&quot;rial_totals&quot; data-field=&quot;in_real&quot; data-row=&quot;0&quot;&gt;—&lt;/b&gt; ریال وارد شد و &lt;b class=&quot;bk-n&quot; data-draw=&quot;rial-lede-out&quot; data-source=&quot;rial_totals&quot; data-field=&quot;out_real&quot; data-row=&quot;0&quot;&gt;—&lt;/b&gt; ریال هزینه شد&lt;span data-draw=&quot;rial-lede-top&quot;&gt;&lt;/span&gt;. انتقال بین حساب‌ها و خرید و فروش ارز در این دو عدد حساب نشده است.&lt;/p&gt;
+  &lt;div class=&quot;bk-kpis&quot; id=&quot;rial-kpis&quot;&gt;
+    &lt;div class=&quot;bk-kpi bk-kpi-in&quot;&gt;&lt;div class=&quot;bk-kl&quot;&gt;&lt;span class=&quot;bk-dot bk-dot-in&quot;&gt;&lt;/span&gt;ورودی&lt;/div&gt;&lt;div class=&quot;bk-kv bk-pos&quot; data-draw=&quot;rial-in&quot; data-source=&quot;rial_totals&quot; data-field=&quot;in_real&quot; data-row=&quot;0&quot;&gt;—&lt;/div&gt;&lt;div class=&quot;bk-ks&quot;&gt;با انتقال‌ها: &lt;span class=&quot;bk-n&quot; data-draw=&quot;rial-in-all&quot; data-source=&quot;rial_totals&quot; data-field=&quot;in&quot; data-row=&quot;0&quot;&gt;—&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;
+    &lt;div class=&quot;bk-kpi bk-kpi-out&quot;&gt;&lt;div class=&quot;bk-kl&quot;&gt;&lt;span class=&quot;bk-dot bk-dot-out&quot;&gt;&lt;/span&gt;هزینه&lt;/div&gt;&lt;div class=&quot;bk-kv bk-neg&quot; data-draw=&quot;rial-out&quot; data-source=&quot;rial_totals&quot; data-field=&quot;out_real&quot; data-row=&quot;0&quot;&gt;—&lt;/div&gt;&lt;div class=&quot;bk-ks&quot;&gt;با انتقال‌ها: &lt;span class=&quot;bk-n&quot; data-draw=&quot;rial-out-all&quot; data-source=&quot;rial_totals&quot; data-field=&quot;out&quot; data-row=&quot;0&quot;&gt;—&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;
+    &lt;div class=&quot;bk-kpi bk-kpi-net&quot;&gt;&lt;div class=&quot;bk-kl&quot;&gt;&lt;span class=&quot;bk-dot bk-dot-net&quot;&gt;&lt;/span&gt;خالص&lt;/div&gt;&lt;div class=&quot;bk-kv&quot; data-draw=&quot;rial-net&quot; data-source=&quot;rial_totals&quot; data-field=&quot;net_real&quot; data-row=&quot;0&quot;&gt;—&lt;/div&gt;&lt;div class=&quot;bk-ks&quot;&gt;ورودی منهای هزینه&lt;/div&gt;&lt;/div&gt;
+    &lt;div class=&quot;bk-kpi bk-kpi-bal&quot;&gt;&lt;div class=&quot;bk-kl&quot;&gt;&lt;span class=&quot;bk-dot bk-dot-bal&quot;&gt;&lt;/span&gt;موجودی کل حساب‌ها&lt;/div&gt;&lt;div class=&quot;bk-kv&quot; data-draw=&quot;rial-bal&quot; data-source=&quot;rial_totals&quot; data-field=&quot;balance&quot; data-row=&quot;0&quot;&gt;—&lt;/div&gt;&lt;div class=&quot;bk-ks&quot;&gt;آخرین مانده ثبت‌شده در شیت&lt;/div&gt;&lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;div class=&quot;bk-grid&quot;&gt;
+    &lt;div class=&quot;bk-card&quot; id=&quot;rial-accounts-card&quot;&gt;
+      &lt;h3&gt;مانده و گردش هر حساب&lt;/h3&gt;
+      &lt;div class=&quot;bk-scroll&quot;&gt;
+      &lt;table class=&quot;bk-table&quot; id=&quot;rial-accounts&quot; data-source=&quot;rial_accounts&quot; data-row-key=&quot;tab&quot;&gt;
+        &lt;thead&gt;&lt;tr&gt;&lt;th data-field=&quot;label&quot;&gt;حساب&lt;/th&gt;&lt;th data-field=&quot;balance&quot; class=&quot;num&quot;&gt;مانده&lt;/th&gt;&lt;th data-field=&quot;in&quot; class=&quot;num&quot;&gt;ورودی بازه&lt;/th&gt;&lt;th data-field=&quot;out&quot; class=&quot;num&quot;&gt;خروجی بازه&lt;/th&gt;&lt;th data-field=&quot;last_date&quot;&gt;آخرین تراکنش&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;
+        &lt;tbody data-draw=&quot;rial-acc-body&quot;&gt;&lt;/tbody&gt;
+      &lt;/table&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;bk-card bk-card-b&quot; id=&quot;rial-cats-card&quot;&gt;
+      &lt;h3&gt;هزینه‌ها بر اساس دسته&lt;/h3&gt;
+      &lt;p class=&quot;bk-note&quot;&gt;بدون انتقال بین حساب‌ها. برای جزئیات روی دسته بزنید.&lt;/p&gt;
+      &lt;div class=&quot;bk-bars&quot; data-draw=&quot;rial-cats&quot; data-source=&quot;rial_cats&quot;&gt;&lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;div class=&quot;bk-card&quot; id=&quot;rial-daily-card&quot;&gt;
+    &lt;h3&gt;ورودی و هزینه روزانه، ۳۰ روز منتهی به پایان بازه&lt;/h3&gt;
+    &lt;div class=&quot;bk-legend&quot;&gt;&lt;span&gt;&lt;i class=&quot;bk-sw bk-sw-in&quot;&gt;&lt;/i&gt;ورودی&lt;/span&gt;&lt;span&gt;&lt;i class=&quot;bk-sw bk-sw-out&quot;&gt;&lt;/i&gt;هزینه&lt;/span&gt;&lt;/div&gt;
+    &lt;div class=&quot;bk-daily&quot; data-draw=&quot;rial-daily&quot; data-source=&quot;rial_daily&quot;&gt;&lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;div class=&quot;bk-card bk-card-c&quot; id=&quot;rial-tx-card&quot;&gt;
+    &lt;div class=&quot;bk-txhead&quot;&gt;
+      &lt;h3&gt;ریز تراکنش‌های بازه&lt;/h3&gt;
+      &lt;div class=&quot;bk-txctl&quot;&gt;
+        &lt;select class=&quot;dash-select bk-txdir&quot; data-cur=&quot;rial&quot; id=&quot;rial-txdir&quot; aria-label=&quot;نوع تراکنش&quot;&gt;
+          &lt;option value=&quot;all&quot;&gt;همه&lt;/option&gt;&lt;option value=&quot;in&quot;&gt;فقط ورودی‌ها&lt;/option&gt;&lt;option value=&quot;out&quot;&gt;فقط خروجی‌ها&lt;/option&gt;
+        &lt;/select&gt;
+        &lt;label class=&quot;bk-chk&quot;&gt;&lt;input type=&quot;checkbox&quot; class=&quot;bk-txint&quot; data-cur=&quot;rial&quot; id=&quot;rial-txint&quot;&gt; نمایش انتقال بین حساب‌ها&lt;/label&gt;
+        &lt;button type=&quot;button&quot; class=&quot;bk-clear&quot; data-cur=&quot;rial&quot; hidden&gt;حذف فیلتر دسته: &lt;span data-draw=&quot;rial-catname&quot;&gt;&lt;/span&gt; ×&lt;/button&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;bk-scroll&quot;&gt;
+    &lt;table class=&quot;bk-table bk-tx&quot; id=&quot;rial-tx&quot; data-source=&quot;rial_period&quot; data-row-key=&quot;k&quot;&gt;
+      &lt;thead&gt;&lt;tr&gt;&lt;th data-field=&quot;jdate&quot;&gt;تاریخ&lt;/th&gt;&lt;th data-field=&quot;account&quot;&gt;حساب&lt;/th&gt;&lt;th data-field=&quot;in&quot; class=&quot;num&quot;&gt;ورودی&lt;/th&gt;&lt;th data-field=&quot;out&quot; class=&quot;num&quot;&gt;خروجی&lt;/th&gt;&lt;th data-field=&quot;category_fa&quot;&gt;دسته&lt;/th&gt;&lt;th data-field=&quot;subject&quot;&gt;شرح&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;
+      &lt;tbody data-draw=&quot;rial-tx-body&quot;&gt;&lt;/tbody&gt;
+    &lt;/table&gt;
+    &lt;/div&gt;
+    &lt;p class=&quot;bk-note&quot; data-draw=&quot;rial-tx-more&quot;&gt;&lt;/p&gt;
+  &lt;/div&gt;
+&lt;/section&gt;
+  
+&lt;section class=&quot;bk-sec&quot; id=&quot;eur&quot; hidden&gt;
+  &lt;p class=&quot;bk-lede&quot; data-read lang=&quot;fa&quot;&gt;در این بازه &lt;b class=&quot;bk-n&quot; data-draw=&quot;eur-lede-in&quot; data-source=&quot;eur_totals&quot; data-field=&quot;in_real&quot; data-row=&quot;0&quot;&gt;—&lt;/b&gt; یورو وارد شد و &lt;b class=&quot;bk-n&quot; data-draw=&quot;eur-lede-out&quot; data-source=&quot;eur_totals&quot; data-field=&quot;out_real&quot; data-row=&quot;0&quot;&gt;—&lt;/b&gt; یورو هزینه شد&lt;span data-draw=&quot;eur-lede-top&quot;&gt;&lt;/span&gt;. انتقال بین حساب‌ها و خرید و فروش ارز در این دو عدد حساب نشده است.&lt;/p&gt;
+  &lt;div class=&quot;bk-kpis&quot; id=&quot;eur-kpis&quot;&gt;
+    &lt;div class=&quot;bk-kpi bk-kpi-in&quot;&gt;&lt;div class=&quot;bk-kl&quot;&gt;&lt;span class=&quot;bk-dot bk-dot-in&quot;&gt;&lt;/span&gt;ورودی&lt;/div&gt;&lt;div class=&quot;bk-kv bk-pos&quot; data-draw=&quot;eur-in&quot; data-source=&quot;eur_totals&quot; data-field=&quot;in_real&quot; data-row=&quot;0&quot;&gt;—&lt;/div&gt;&lt;div class=&quot;bk-ks&quot;&gt;با انتقال‌ها: &lt;span class=&quot;bk-n&quot; data-draw=&quot;eur-in-all&quot; data-source=&quot;eur_totals&quot; data-field=&quot;in&quot; data-row=&quot;0&quot;&gt;—&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;
+    &lt;div class=&quot;bk-kpi bk-kpi-out&quot;&gt;&lt;div class=&quot;bk-kl&quot;&gt;&lt;span class=&quot;bk-dot bk-dot-out&quot;&gt;&lt;/span&gt;هزینه&lt;/div&gt;&lt;div class=&quot;bk-kv bk-neg&quot; data-draw=&quot;eur-out&quot; data-source=&quot;eur_totals&quot; data-field=&quot;out_real&quot; data-row=&quot;0&quot;&gt;—&lt;/div&gt;&lt;div class=&quot;bk-ks&quot;&gt;با انتقال‌ها: &lt;span class=&quot;bk-n&quot; data-draw=&quot;eur-out-all&quot; data-source=&quot;eur_totals&quot; data-field=&quot;out&quot; data-row=&quot;0&quot;&gt;—&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;
+    &lt;div class=&quot;bk-kpi bk-kpi-net&quot;&gt;&lt;div class=&quot;bk-kl&quot;&gt;&lt;span class=&quot;bk-dot bk-dot-net&quot;&gt;&lt;/span&gt;خالص&lt;/div&gt;&lt;div class=&quot;bk-kv&quot; data-draw=&quot;eur-net&quot; data-source=&quot;eur_totals&quot; data-field=&quot;net_real&quot; data-row=&quot;0&quot;&gt;—&lt;/div&gt;&lt;div class=&quot;bk-ks&quot;&gt;ورودی منهای هزینه&lt;/div&gt;&lt;/div&gt;
+    &lt;div class=&quot;bk-kpi bk-kpi-bal&quot;&gt;&lt;div class=&quot;bk-kl&quot;&gt;&lt;span class=&quot;bk-dot bk-dot-bal&quot;&gt;&lt;/span&gt;موجودی کل حساب‌ها&lt;/div&gt;&lt;div class=&quot;bk-kv&quot; data-draw=&quot;eur-bal&quot; data-source=&quot;eur_totals&quot; data-field=&quot;balance&quot; data-row=&quot;0&quot;&gt;—&lt;/div&gt;&lt;div class=&quot;bk-ks&quot;&gt;آخرین مانده ثبت‌شده در شیت&lt;/div&gt;&lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;div class=&quot;bk-grid&quot;&gt;
+    &lt;div class=&quot;bk-card&quot; id=&quot;eur-accounts-card&quot;&gt;
+      &lt;h3&gt;مانده و گردش هر حساب&lt;/h3&gt;
+      &lt;div class=&quot;bk-scroll&quot;&gt;
+      &lt;table class=&quot;bk-table&quot; id=&quot;eur-accounts&quot; data-source=&quot;eur_accounts&quot; data-row-key=&quot;tab&quot;&gt;
+        &lt;thead&gt;&lt;tr&gt;&lt;th data-field=&quot;label&quot;&gt;حساب&lt;/th&gt;&lt;th data-field=&quot;balance&quot; class=&quot;num&quot;&gt;مانده&lt;/th&gt;&lt;th data-field=&quot;in&quot; class=&quot;num&quot;&gt;ورودی بازه&lt;/th&gt;&lt;th data-field=&quot;out&quot; class=&quot;num&quot;&gt;خروجی بازه&lt;/th&gt;&lt;th data-field=&quot;last_date&quot;&gt;آخرین تراکنش&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;
+        &lt;tbody data-draw=&quot;eur-acc-body&quot;&gt;&lt;/tbody&gt;
+      &lt;/table&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;bk-card bk-card-b&quot; id=&quot;eur-cats-card&quot;&gt;
+      &lt;h3&gt;هزینه‌ها بر اساس دسته&lt;/h3&gt;
+      &lt;p class=&quot;bk-note&quot;&gt;بدون انتقال بین حساب‌ها. برای جزئیات روی دسته بزنید.&lt;/p&gt;
+      &lt;div class=&quot;bk-bars&quot; data-draw=&quot;eur-cats&quot; data-source=&quot;eur_cats&quot;&gt;&lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;div class=&quot;bk-card&quot; id=&quot;eur-daily-card&quot;&gt;
+    &lt;h3&gt;ورودی و هزینه روزانه، ۳۰ روز منتهی به پایان بازه&lt;/h3&gt;
+    &lt;div class=&quot;bk-legend&quot;&gt;&lt;span&gt;&lt;i class=&quot;bk-sw bk-sw-in&quot;&gt;&lt;/i&gt;ورودی&lt;/span&gt;&lt;span&gt;&lt;i class=&quot;bk-sw bk-sw-out&quot;&gt;&lt;/i&gt;هزینه&lt;/span&gt;&lt;/div&gt;
+    &lt;div class=&quot;bk-daily&quot; data-draw=&quot;eur-daily&quot; data-source=&quot;eur_daily&quot;&gt;&lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;div class=&quot;bk-card bk-card-c&quot; id=&quot;eur-tx-card&quot;&gt;
+    &lt;div class=&quot;bk-txhead&quot;&gt;
+      &lt;h3&gt;ریز تراکنش‌های بازه&lt;/h3&gt;
+      &lt;div class=&quot;bk-txctl&quot;&gt;
+        &lt;select class=&quot;dash-select bk-txdir&quot; data-cur=&quot;eur&quot; id=&quot;eur-txdir&quot; aria-label=&quot;نوع تراکنش&quot;&gt;
+          &lt;option value=&quot;all&quot;&gt;همه&lt;/option&gt;&lt;option value=&quot;in&quot;&gt;فقط ورودی‌ها&lt;/option&gt;&lt;option value=&quot;out&quot;&gt;فقط خروجی‌ها&lt;/option&gt;
+        &lt;/select&gt;
+        &lt;label class=&quot;bk-chk&quot;&gt;&lt;input type=&quot;checkbox&quot; class=&quot;bk-txint&quot; data-cur=&quot;eur&quot; id=&quot;eur-txint&quot;&gt; نمایش انتقال بین حساب‌ها&lt;/label&gt;
+        &lt;button type=&quot;button&quot; class=&quot;bk-clear&quot; data-cur=&quot;eur&quot; hidden&gt;حذف فیلتر دسته: &lt;span data-draw=&quot;eur-catname&quot;&gt;&lt;/span&gt; ×&lt;/button&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;bk-scroll&quot;&gt;
+    &lt;table class=&quot;bk-table bk-tx&quot; id=&quot;eur-tx&quot; data-source=&quot;eur_period&quot; data-row-key=&quot;k&quot;&gt;
+      &lt;thead&gt;&lt;tr&gt;&lt;th data-field=&quot;jdate&quot;&gt;تاریخ&lt;/th&gt;&lt;th data-field=&quot;account&quot;&gt;حساب&lt;/th&gt;&lt;th data-field=&quot;in&quot; class=&quot;num&quot;&gt;ورودی&lt;/th&gt;&lt;th data-field=&quot;out&quot; class=&quot;num&quot;&gt;خروجی&lt;/th&gt;&lt;th data-field=&quot;category_fa&quot;&gt;دسته&lt;/th&gt;&lt;th data-field=&quot;subject&quot;&gt;شرح&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;
+      &lt;tbody data-draw=&quot;eur-tx-body&quot;&gt;&lt;/tbody&gt;
+    &lt;/table&gt;
+    &lt;/div&gt;
+    &lt;p class=&quot;bk-note&quot; data-draw=&quot;eur-tx-more&quot;&gt;&lt;/p&gt;
+  &lt;/div&gt;
+&lt;/section&gt;
+  
+&lt;section class=&quot;bk-sec&quot; id=&quot;try&quot; hidden&gt;
+  &lt;p class=&quot;bk-lede&quot; data-read lang=&quot;fa&quot;&gt;در این بازه &lt;b class=&quot;bk-n&quot; data-draw=&quot;try-lede-in&quot; data-source=&quot;try_totals&quot; data-field=&quot;in_real&quot; data-row=&quot;0&quot;&gt;—&lt;/b&gt; لیر وارد شد و &lt;b class=&quot;bk-n&quot; data-draw=&quot;try-lede-out&quot; data-source=&quot;try_totals&quot; data-field=&quot;out_real&quot; data-row=&quot;0&quot;&gt;—&lt;/b&gt; لیر هزینه شد&lt;span data-draw=&quot;try-lede-top&quot;&gt;&lt;/span&gt;. انتقال بین حساب‌ها و خرید و فروش ارز در این دو عدد حساب نشده است.&lt;/p&gt;
+  &lt;div class=&quot;bk-kpis&quot; id=&quot;try-kpis&quot;&gt;
+    &lt;div class=&quot;bk-kpi bk-kpi-in&quot;&gt;&lt;div class=&quot;bk-kl&quot;&gt;&lt;span class=&quot;bk-dot bk-dot-in&quot;&gt;&lt;/span&gt;ورودی&lt;/div&gt;&lt;div class=&quot;bk-kv bk-pos&quot; data-draw=&quot;try-in&quot; data-source=&quot;try_totals&quot; data-field=&quot;in_real&quot; data-row=&quot;0&quot;&gt;—&lt;/div&gt;&lt;div class=&quot;bk-ks&quot;&gt;با انتقال‌ها: &lt;span class=&quot;bk-n&quot; data-draw=&quot;try-in-all&quot; data-source=&quot;try_totals&quot; data-field=&quot;in&quot; data-row=&quot;0&quot;&gt;—&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;
+    &lt;div class=&quot;bk-kpi bk-kpi-out&quot;&gt;&lt;div class=&quot;bk-kl&quot;&gt;&lt;span class=&quot;bk-dot bk-dot-out&quot;&gt;&lt;/span&gt;هزینه&lt;/div&gt;&lt;div class=&quot;bk-kv bk-neg&quot; data-draw=&quot;try-out&quot; data-source=&quot;try_totals&quot; data-field=&quot;out_real&quot; data-row=&quot;0&quot;&gt;—&lt;/div&gt;&lt;div class=&quot;bk-ks&quot;&gt;با انتقال‌ها: &lt;span class=&quot;bk-n&quot; data-draw=&quot;try-out-all&quot; data-source=&quot;try_totals&quot; data-field=&quot;out&quot; data-row=&quot;0&quot;&gt;—&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;
+    &lt;div class=&quot;bk-kpi bk-kpi-net&quot;&gt;&lt;div class=&quot;bk-kl&quot;&gt;&lt;span class=&quot;bk-dot bk-dot-net&quot;&gt;&lt;/span&gt;خالص&lt;/div&gt;&lt;div class=&quot;bk-kv&quot; data-draw=&quot;try-net&quot; data-source=&quot;try_totals&quot; data-field=&quot;net_real&quot; data-row=&quot;0&quot;&gt;—&lt;/div&gt;&lt;div class=&quot;bk-ks&quot;&gt;ورودی منهای هزینه&lt;/div&gt;&lt;/div&gt;
+    &lt;div class=&quot;bk-kpi bk-kpi-bal&quot;&gt;&lt;div class=&quot;bk-kl&quot;&gt;&lt;span class=&quot;bk-dot bk-dot-bal&quot;&gt;&lt;/span&gt;موجودی کل حساب‌ها&lt;/div&gt;&lt;div class=&quot;bk-kv&quot; data-draw=&quot;try-bal&quot; data-source=&quot;try_totals&quot; data-field=&quot;balance&quot; data-row=&quot;0&quot;&gt;—&lt;/div&gt;&lt;div class=&quot;bk-ks&quot;&gt;آخرین مانده ثبت‌شده در شیت&lt;/div&gt;&lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;div class=&quot;bk-grid&quot;&gt;
+    &lt;div class=&quot;bk-card&quot; id=&quot;try-accounts-card&quot;&gt;
+      &lt;h3&gt;مانده و گردش هر حساب&lt;/h3&gt;
+      &lt;div class=&quot;bk-scroll&quot;&gt;
+      &lt;table class=&quot;bk-table&quot; id=&quot;try-accounts&quot; data-source=&quot;try_accounts&quot; data-row-key=&quot;tab&quot;&gt;
+        &lt;thead&gt;&lt;tr&gt;&lt;th data-field=&quot;label&quot;&gt;حساب&lt;/th&gt;&lt;th data-field=&quot;balance&quot; class=&quot;num&quot;&gt;مانده&lt;/th&gt;&lt;th data-field=&quot;in&quot; class=&quot;num&quot;&gt;ورودی بازه&lt;/th&gt;&lt;th data-field=&quot;out&quot; class=&quot;num&quot;&gt;خروجی بازه&lt;/th&gt;&lt;th data-field=&quot;last_date&quot;&gt;آخرین تراکنش&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;
+        &lt;tbody data-draw=&quot;try-acc-body&quot;&gt;&lt;/tbody&gt;
+      &lt;/table&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;bk-card bk-card-b&quot; id=&quot;try-cats-card&quot;&gt;
+      &lt;h3&gt;هزینه‌ها بر اساس دسته&lt;/h3&gt;
+      &lt;p class=&quot;bk-note&quot;&gt;بدون انتقال بین حساب‌ها. برای جزئیات روی دسته بزنید.&lt;/p&gt;
+      &lt;div class=&quot;bk-bars&quot; data-draw=&quot;try-cats&quot; data-source=&quot;try_cats&quot;&gt;&lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;div class=&quot;bk-card&quot; id=&quot;try-daily-card&quot;&gt;
+    &lt;h3&gt;ورودی و هزینه روزانه، ۳۰ روز منتهی به پایان بازه&lt;/h3&gt;
+    &lt;div class=&quot;bk-legend&quot;&gt;&lt;span&gt;&lt;i class=&quot;bk-sw bk-sw-in&quot;&gt;&lt;/i&gt;ورودی&lt;/span&gt;&lt;span&gt;&lt;i class=&quot;bk-sw bk-sw-out&quot;&gt;&lt;/i&gt;هزینه&lt;/span&gt;&lt;/div&gt;
+    &lt;div class=&quot;bk-daily&quot; data-draw=&quot;try-daily&quot; data-source=&quot;try_daily&quot;&gt;&lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;div class=&quot;bk-card bk-card-c&quot; id=&quot;try-tx-card&quot;&gt;
+    &lt;div class=&quot;bk-txhead&quot;&gt;
+      &lt;h3&gt;ریز تراکنش‌های بازه&lt;/h3&gt;
+      &lt;div class=&quot;bk-txctl&quot;&gt;
+        &lt;select class=&quot;dash-select bk-txdir&quot; data-cur=&quot;try&quot; id=&quot;try-txdir&quot; aria-label=&quot;نوع تراکنش&quot;&gt;
+          &lt;option value=&quot;all&quot;&gt;همه&lt;/option&gt;&lt;option value=&quot;in&quot;&gt;فقط ورودی‌ها&lt;/option&gt;&lt;option value=&quot;out&quot;&gt;فقط خروجی‌ها&lt;/option&gt;
+        &lt;/select&gt;
+        &lt;label class=&quot;bk-chk&quot;&gt;&lt;input type=&quot;checkbox&quot; class=&quot;bk-txint&quot; data-cur=&quot;try&quot; id=&quot;try-txint&quot;&gt; نمایش انتقال بین حساب‌ها&lt;/label&gt;
+        &lt;button type=&quot;button&quot; class=&quot;bk-clear&quot; data-cur=&quot;try&quot; hidden&gt;حذف فیلتر دسته: &lt;span data-draw=&quot;try-catname&quot;&gt;&lt;/span&gt; ×&lt;/button&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;bk-scroll&quot;&gt;
+    &lt;table class=&quot;bk-table bk-tx&quot; id=&quot;try-tx&quot; data-source=&quot;try_period&quot; data-row-key=&quot;k&quot;&gt;
+      &lt;thead&gt;&lt;tr&gt;&lt;th data-field=&quot;jdate&quot;&gt;تاریخ&lt;/th&gt;&lt;th data-field=&quot;account&quot;&gt;حساب&lt;/th&gt;&lt;th data-field=&quot;in&quot; class=&quot;num&quot;&gt;ورودی&lt;/th&gt;&lt;th data-field=&quot;out&quot; class=&quot;num&quot;&gt;خروجی&lt;/th&gt;&lt;th data-field=&quot;category_fa&quot;&gt;دسته&lt;/th&gt;&lt;th data-field=&quot;subject&quot;&gt;شرح&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;
+      &lt;tbody data-draw=&quot;try-tx-body&quot;&gt;&lt;/tbody&gt;
+    &lt;/table&gt;
+    &lt;/div&gt;
+    &lt;p class=&quot;bk-note&quot; data-draw=&quot;try-tx-more&quot;&gt;&lt;/p&gt;
+  &lt;/div&gt;
+&lt;/section&gt;
+  &lt;details class=&quot;bk-foot&quot;&gt;&lt;summary&gt;این اعداد چطور حساب می‌شوند&lt;/summary&gt;
+    &lt;p&gt;هر حساب مستقیم از تب خودش در دو فایل گوگل‌شیت خوانده می‌شود: ستون تاریخ میلادی، ورودی، خروجی، دسته (Title / Cost Category) و شرح. «ورودی» و «هزینه» دسته‌های واسط فایل «دسته بندی هزینه ها» را حساب نمی‌کنند: انتقال بین حساب‌های ریالی و ارزی، خرید و فروش ارز و صندوق آقای عمرانی. مانده هر حساب آخرین عدد ستون مانده در همان تب است. در تب‌های ریالی، ردیفی که تاریخ ندارد در مانده حساب می‌شود ولی در جمع هیچ بازه‌ای نمی‌آید و کنار نام حساب علامت می‌خورد. در تب‌های ارزی ردیف‌های بدون تاریخ (مثل ردیف‌های کنترل «Ta tarikh») خوانده نمی‌شوند. موجودی ICS کارت اعتباری است و عدد منفی یعنی بدهی کارت. تب‌های B(T) (فرمت قدیمی)، «تجارت- طلب و بدهی با عمرانی» و «طلب و بدهی با صندوق» حساب بانکی نیستند و در این داشبورد نیامده‌اند.&lt;/p&gt;
+  &lt;/details&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;script&gt;// ---- mini runtime: stands in for the Claude dashboard API, so the same code runs on its own ----
+(function () {
+  const RAW = {}; const L = {}; const C = {}; const D = {}; const ON = [];
+  let P = {from: &#x27;&#x27;, to: &#x27;&#x27;}; let state = &#x27;loading&#x27;; let err = &#x27;&#x27;;
+  let rowCache = {}; let calcCache = {};
+  const rowsOf = (id) =&gt; {
+    if (rowCache[id]) return rowCache[id];
+    const a = RAW[id]; if (!a) return [];
+    let r = L[id] ? L[id]({answer: {values: a.values}, args: {range: a.range}}) : a.values;
+    r = Array.isArray(r) ? r : (r &amp;&amp; r.rows) || [];
+    return (rowCache[id] = r);
+  };
+  const val = (id) =&gt; {
+    if (C[id]) { if (!(id in calcCache)) calcCache[id] = C[id].fn(...C[id].inputs.map(val)); return calcCache[id]; }
+    return rowsOf(id);
+  };
+  const runAll = () =&gt; {
+    calcCache = {};
+    ON.forEach((f) =&gt; { try { f(); } catch (e) { console.error(e); } });
+    document.querySelectorAll(&#x27;[data-draw]&#x27;).forEach((el) =&gt; {
+      if (el.closest(&#x27;[hidden]&#x27;)) return;
+      const f = D[el.dataset.draw]; if (f) { try { f(el); } catch (e) { console.error(e); } }
+    });
+  };
+  window.dash = {
+    loader: (id, o) =&gt; { L[id] = o.fn; },
+    calc: (id, o) =&gt; { C[id] = o; },
+    draw: (name, fn) =&gt; { if (fn) { D[name] = fn; return; } document.querySelectorAll(&#x27;[data-draw=&quot;&#x27; + name + &#x27;&quot;]&#x27;).forEach((el) =&gt; { if (!el.closest(&#x27;[hidden]&#x27;) &amp;&amp; D[name]) D[name](el); }); },
+    onData: (fn) =&gt; { ON.push(fn); },
+    params: () =&gt; Object.assign({}, P),
+    setParams: (o) =&gt; { P = Object.assign({}, P, o); runAll(); },
+    resetParams: () =&gt; { P = {from: &#x27;&#x27;, to: &#x27;&#x27;}; runAll(); },
+    setLink: () =&gt; { runAll(); },
+    refresh: () =&gt; window.bkLoad(),
+    colors: [&#x27;var(--c1)&#x27;, &#x27;var(--c2)&#x27;, &#x27;var(--c3)&#x27;, &#x27;var(--c4)&#x27;],
+    data: (id) =&gt; {
+      if (state !== &#x27;ok&#x27;) return {status: state, data: C[id] ? null : [], message: err};
+      return {status: &#x27;ok&#x27;, data: val(id)};
+    },
+  };
+  const stamp = (txt) =&gt; document.querySelectorAll(&#x27;#bk-updated&#x27;).forEach((el) =&gt; { el.textContent = txt; });
+  window.bkLoad = () =&gt; {
+    stamp(&#x27;در حال خواندن از گوگل‌شیت…&#x27;);
+    document.querySelectorAll(&#x27;#bk-refresh&#x27;).forEach((b) =&gt; { b.disabled = true; });
+    google.script.run
+      .withSuccessHandler((json) =&gt; {
+        const d = JSON.parse(json);
+        Object.keys(RAW).forEach((k) =&gt; delete RAW[k]); Object.assign(RAW, d.data);
+        rowCache = {}; state = &#x27;ok&#x27;; err = &#x27;&#x27;;
+        stamp(&#x27;به‌روز شده: &#x27; + new Date().toLocaleTimeString(&#x27;fa-IR&#x27;, {hour: &#x27;2-digit&#x27;, minute: &#x27;2-digit&#x27;}) + (d.missing.length ? &#x27; · تب پیدا نشد: &#x27; + d.missing.join(&#x27;، &#x27;) : &#x27;&#x27;));
+        document.querySelectorAll(&#x27;#bk-refresh&#x27;).forEach((b) =&gt; { b.disabled = false; });
+        runAll();
+      })
+      .withFailureHandler((e) =&gt; {
+        state = rowCache &amp;&amp; Object.keys(RAW).length ? &#x27;ok&#x27; : &#x27;error&#x27;; err = String(e &amp;&amp; e.message || e);
+        stamp(&#x27;خواندن ناموفق بود: &#x27; + err);
+        document.querySelectorAll(&#x27;#bk-refresh&#x27;).forEach((b) =&gt; { b.disabled = false; });
+        runAll();
+      })
+      .getData();
+  };
+  let t; window.addEventListener(&#x27;resize&#x27;, () =&gt; { clearTimeout(t); t = setTimeout(runAll, 150); });
+  window.bkRunAll = runAll;
+})();
+&lt;/script&gt;
+&lt;script&gt;(function () {
+const GROUPS = {&quot;rial&quot;: {&quot;ids&quot;: [&quot;rial_AR&quot;, &quot;rial_BR&quot;, &quot;rial_CR&quot;, &quot;rial_AT&quot;, &quot;rial_BTG&quot;, &quot;rial_CTG&quot;, &quot;rial_armin&quot;, &quot;rial_armita&quot;, &quot;rial_nariman&quot;, &quot;rial_sadegh&quot;, &quot;rial_heeman&quot;, &quot;rial_alireza&quot;, &quot;rial_samaneh&quot;, &quot;rial_mhmd&quot;, &quot;rial_tsob&quot;, &quot;rial_tbirad&quot;, &quot;rial_thr&quot;, &quot;rial_melli&quot;, &quot;rial_foroosh&quot;, &quot;rial_sandogh&quot;], &quot;labels&quot;: {&quot;A(R)&quot;: &quot;رسالت اردوان&quot;, &quot;B(R)&quot;: &quot;رسالت بیراد&quot;, &quot;C(R)&quot;: &quot;رسالت چاپار&quot;, &quot;A(T)&quot;: &quot;تجارت اردوان&quot;, &quot;B(T.G)&quot;: &quot;تجارت بیراد (گیشا)&quot;, &quot;C(T.G)&quot;: &quot;تجارت چاپار (گیشا)&quot;, &quot;Armin&quot;: &quot;رسالت آرمین&quot;, &quot;Armita&quot;: &quot;رسالت آرمیتا&quot;, &quot;Nariman&quot;: &quot;رسالت نریمان&quot;, &quot;Sadegh&quot;: &quot;رسالت صادق&quot;, &quot;Heeman&quot;: &quot;رسالت هیمن&quot;, &quot;Alireza&quot;: &quot;رسالت علیرضا&quot;, &quot;Samaneh&quot;: &quot;رسالت سمانه&quot;, &quot;Mhmd&quot;: &quot;رسالت محمد&quot;, &quot;Tankhah Sobhaneh&quot;: &quot;تنخواه سبحانه&quot;, &quot;Tankhah Birad&quot;: &quot;تنخواه بیراد&quot;, &quot;Tankhah HR&quot;: &quot;تنخواه HR&quot;, &quot;Soudabeh Melli&quot;: &quot;ملی سودابه&quot;, &quot;Foroosh&quot;: &quot;تجارت فروش&quot;, &quot;Sandogh&quot;: &quot;تجارت صندوق&quot;}}, &quot;eur&quot;: {&quot;ids&quot;: [&quot;eur_revolut&quot;, &quot;eur_abn&quot;, &quot;eur_abnh&quot;, &quot;eur_ics&quot;, &quot;eur_zeraat&quot;], &quot;labels&quot;: {&quot;Revolut1&quot;: &quot;Revolut&quot;, &quot;ABN&quot;: &quot;ABN B.V.&quot;, &quot;ABN Bugloos Holding &quot;: &quot;ABN Bugloos Holding&quot;, &quot;ICS&quot;: &quot;ICS (کارت اعتباری)&quot;, &quot;Zeraat Euro&quot;: &quot;زراعت یورو&quot;}}, &quot;try&quot;: {&quot;ids&quot;: [&quot;try_zeraat&quot;], &quot;labels&quot;: {&quot;Zeraat lir&quot;: &quot;زراعت لیر&quot;}}};
+
+// ---------- loaders: Google Sheets values -&gt; rows ----------
+const rialLoader = ({answer, args}) =&gt; {
+  const a = (answer &amp;&amp; answer.values) ? answer : ((answer &amp;&amp; answer.content) || {});
+  const vals = Array.isArray(a.values) ? a.values : [];
+  const tab = String(args.range).split(&#x27;!&#x27;)[0].replace(/^&#x27;|&#x27;$/g, &#x27;&#x27;);
+  const num = (s) =&gt; { if (s == null || s === &#x27;&#x27;) return 0; const n = parseFloat(String(s).replace(/[^0-9.\-]/g, &#x27;&#x27;)); return isFinite(n) ? n : 0; };
+  const rows = [];
+  vals.forEach((r, i) =&gt; {
+    const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(String(r[2] || &#x27;&#x27;).trim());
+    const has = [3, 4, 7].some((j) =&gt; r[j] != null &amp;&amp; r[j] !== &#x27;&#x27;);
+    if (!m &amp;&amp; !has) return;
+    rows.push({tab, line: i + 5, date: m ? m[3] + &#x27;-&#x27; + m[2].padStart(2, &#x27;0&#x27;) + &#x27;-&#x27; + m[1].padStart(2, &#x27;0&#x27;) : &#x27;&#x27;,
+      in: num(r[3]), out: num(r[4]), category: String(r[5] || &#x27;&#x27;).trim(), subject: String(r[6] || &#x27;&#x27;).trim(),
+      description: &#x27;&#x27;, balance: (r[7] == null || r[7] === &#x27;&#x27;) ? null : num(r[7])});
+  });
+  return {columns: [&#x27;tab&#x27;, &#x27;line&#x27;, &#x27;date&#x27;, &#x27;in&#x27;, &#x27;out&#x27;, &#x27;category&#x27;, &#x27;subject&#x27;, &#x27;description&#x27;, &#x27;balance&#x27;], rows};
+};
+const fxLoader = ({answer, args}) =&gt; {
+  const a = (answer &amp;&amp; answer.values) ? answer : ((answer &amp;&amp; answer.content) || {});
+  const vals = Array.isArray(a.values) ? a.values : [];
+  const tab = String(args.range).split(&#x27;!&#x27;)[0].replace(/^&#x27;|&#x27;$/g, &#x27;&#x27;);
+  const num = (s) =&gt; { if (s == null || s === &#x27;&#x27;) return 0; const n = parseFloat(String(s).replace(/[^0-9.\-]/g, &#x27;&#x27;)); return isFinite(n) ? n : 0; };
+  const M = {jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12};
+  const rows = [];
+  vals.forEach((r, i) =&gt; {
+    const m = /^(\d{1,2})\s+([A-Za-z]{3})[a-z]*\s+(\d{4})$/.exec(String(r[1] || &#x27;&#x27;).trim());
+    if (!m || !M[m[2].toLowerCase()] || +m[3] &lt; 2000) return;
+    rows.push({tab, line: i + 2, date: m[3] + &#x27;-&#x27; + String(M[m[2].toLowerCase()]).padStart(2, &#x27;0&#x27;) + &#x27;-&#x27; + m[1].padStart(2, &#x27;0&#x27;),
+      in: num(r[3]), out: num(r[4]), category: String(r[6] || &#x27;&#x27;).trim(), subject: String(r[7] || &#x27;&#x27;).trim(),
+      description: String(r[2] || &#x27;&#x27;).trim(), balance: (r[5] == null || r[5] === &#x27;&#x27;) ? null : num(r[5])});
+  });
+  return {columns: [&#x27;tab&#x27;, &#x27;line&#x27;, &#x27;date&#x27;, &#x27;in&#x27;, &#x27;out&#x27;, &#x27;category&#x27;, &#x27;subject&#x27;, &#x27;description&#x27;, &#x27;balance&#x27;], rows};
+};
+GROUPS.rial.ids.forEach((id) =&gt; dash.loader(id, {description: &#x27;ردیف‌های شیت را به تراکنش تبدیل می‌کند: تاریخ میلادی ستون C، ورودی D، خروجی E، دسته F، شرح G، مانده H. ردیف بدون تاریخ فقط برای مانده خوانده می‌شود و در جمع هیچ بازه‌ای نمی‌آید.&#x27;, fn: rialLoader}));
+[&#x27;eur&#x27;, &#x27;try&#x27;].forEach((c) =&gt; GROUPS[c].ids.forEach((id) =&gt; dash.loader(id, {description: &#x27;ردیف‌های شیت را به تراکنش تبدیل می‌کند: تاریخ ستون B، شرح C، ورودی D، خروجی E، مانده F، دسته G، توضیح H. ردیف بدون تاریخ معتبر کنار گذاشته می‌شود.&#x27;, fn: fxLoader})));
+
+// ---------- categories (from «دسته بندی هزینه ها») ----------
+const CATS = [
+  [&#x27;Opening Balance&#x27;, &#x27;مانده اول دوره&#x27;, &#x27;open&#x27;], [&#x27;Debt Created&#x27;, &#x27;بدهی ایجاد شده&#x27;, &#x27;in&#x27;], [&#x27;Debt Paid&#x27;, &#x27;بدهی پرداخت شده&#x27;, &#x27;out&#x27;],
+  [&#x27;Loan Receipts&#x27;, &#x27;دریافت تسهیلات&#x27;, &#x27;in&#x27;], [&#x27;Loan Payments&#x27;, &#x27;پرداخت تسهیلات&#x27;, &#x27;out&#x27;], [&#x27;Employee Loan Granted&#x27;, &#x27;اعطای وام پرسنل&#x27;, &#x27;out&#x27;],
+  [&#x27;Employee Loan Repayment&#x27;, &#x27;بازدریافت وام پرسنل&#x27;, &#x27;in&#x27;], [&#x27;Revenue Invoice&#x27;, &#x27;واریزی مشتری&#x27;, &#x27;in&#x27;], [&#x27;Rent Down Payment&#x27;, &#x27;ودیعه دفتر&#x27;, &#x27;out&#x27;],
+  [&#x27;Personal Withdrawal&#x27;, &#x27;جاری شرکا&#x27;, &#x27;out&#x27;], [&#x27;Types of Tax and VAT&#x27;, &#x27;مالیات ارزش افزوده و عملکرد&#x27;, &#x27;out&#x27;],
+  [&#x27;Insurance and Payroll Tax Costs&#x27;, &#x27;بیمه و مالیات حقوق&#x27;, &#x27;out&#x27;], [&#x27;Salary Expenses&#x27;, &#x27;حقوق&#x27;, &#x27;out&#x27;], [&#x27;Other Expenses&#x27;, &#x27;هزینه‌های جاری&#x27;, &#x27;out&#x27;],
+  [&#x27;Bank Fees&#x27;, &#x27;کارمزد بانک&#x27;, &#x27;out&#x27;], [&#x27;Rent Expenses&#x27;, &#x27;اجاره&#x27;, &#x27;out&#x27;], [&#x27;Commission Fees&#x27;, &#x27;کمیسیون&#x27;, &#x27;out&#x27;], [&#x27;Interest Expenses&#x27;, &#x27;بهره&#x27;, &#x27;out&#x27;],
+  [&#x27;Income Munchi&#x27;, &#x27;فروش مانچی&#x27;, &#x27;in&#x27;], [&#x27;Expenses Munchi&#x27;, &#x27;هزینه مانچی&#x27;, &#x27;out&#x27;],
+  [&#x27;Transfer Money Between Currency Accounts&#x27;, &#x27;انتقال بین حساب‌های ارزی&#x27;, &#x27;mid&#x27;], [&#x27;Transfer Money Between Rial Accounts&#x27;, &#x27;انتقال بین حساب‌های ریالی&#x27;, &#x27;mid&#x27;],
+  [&#x27;Currency Buying&#x27;, &#x27;خرید ارز&#x27;, &#x27;mid&#x27;], [&#x27;Currency Sales&#x27;, &#x27;فروش ارز&#x27;, &#x27;mid&#x27;], [&quot;Mr.Emrani&#x27;s Fund Account&quot;, &#x27;صندوق آقای عمرانی&#x27;, &#x27;mid&#x27;], [&#x27;Other&#x27;, &#x27;سایر&#x27;, &#x27;out&#x27;]];
+const CATMAP = {}; CATS.forEach(([en, fa, kind]) =&gt; { CATMAP[en.toLowerCase().replace(/\s+/g, &#x27; &#x27;)] = {en, fa, kind}; });
+const cat = (raw) =&gt; CATMAP[String(raw || &#x27;&#x27;).toLowerCase().replace(/\s+/g, &#x27; &#x27;).trim()] || (raw ? {en: raw, fa: raw, kind: &#x27;other&#x27;} : {en: &#x27;Uncategorized&#x27;, fa: &#x27;بدون دسته&#x27;, kind: &#x27;other&#x27;});
+const isReal = (k) =&gt; k !== &#x27;mid&#x27; &amp;&amp; k !== &#x27;open&#x27;;
+
+// ---------- period ----------
+const tz = &#x27;Asia/Tehran&#x27;;
+const isoOf = (d) =&gt; new Intl.DateTimeFormat(&#x27;en-CA&#x27;, {timeZone: tz, year: &#x27;numeric&#x27;, month: &#x27;2-digit&#x27;, day: &#x27;2-digit&#x27;}).format(d);
+const today = () =&gt; isoOf(new Date());
+const addDays = (iso, n) =&gt; { const d = new Date(iso + &#x27;T00:00:00Z&#x27;); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+const jfmt = new Intl.DateTimeFormat(&#x27;fa-IR-u-ca-persian-nu-latn&#x27;, {timeZone: &#x27;UTC&#x27;, year: &#x27;numeric&#x27;, month: &#x27;2-digit&#x27;, day: &#x27;2-digit&#x27;});
+const jparts = (iso) =&gt; { const p = {}; jfmt.formatToParts(new Date(iso + &#x27;T00:00:00Z&#x27;)).forEach((x) =&gt; { p[x.type] = x.value; }); return p; };
+const jdate = (iso) =&gt; { const p = jparts(iso); return p.year + &#x27;/&#x27; + p.month + &#x27;/&#x27; + p.day; };
+const jMonthStart = (iso) =&gt; { let d = iso; for (let i = 0; i &lt; 32 &amp;&amp; +jparts(d).day !== 1; i++) d = addDays(d, -1); return d; };
+const jYearStart = (iso) =&gt; { let d = jMonthStart(iso); for (let i = 0; i &lt; 13 &amp;&amp; +jparts(d).month !== 1; i++) d = jMonthStart(addDays(d, -1)); return d; };
+const period = () =&gt; { const p = dash.params(); const t = today(); let from = p.from || t, to = p.to || t; if (from &gt; to) [from, to] = [to, from]; return {from, to}; };
+window.bkPeriod = period;
+
+// ---------- calcs per currency ----------
+Object.keys(GROUPS).forEach((c) =&gt; {
+  const G = GROUPS[c];
+  dash.calc(c + &#x27;_period&#x27;, {inputs: G.ids, title: &#x27;تراکنش‌های بازه انتخابی&#x27;, description: &#x27;همه تراکنش‌های حساب‌های این ارز که تاریخشان در بازه انتخابی است، جدیدترین اول.&#x27;,
+    fn: (...accounts) =&gt; {
+      const {from, to} = period(); const out = [];
+      accounts.forEach((rows) =&gt; (rows || []).forEach((r) =&gt; {
+        if (r.date &lt; from || r.date &gt; to || (!r.in &amp;&amp; !r.out)) return;
+        const k = cat(r.category);
+        out.push({k: r.tab + &#x27;:&#x27; + r.line, date: r.date, jdate: jdate(r.date), tab: r.tab, account: G.labels[r.tab] || r.tab, in: r.in, out: r.out,
+          category: k.en, category_fa: k.fa, kind: k.kind, real: isReal(k.kind), subject: r.subject, description: r.description});
+      }));
+      out.sort((a, b) =&gt; (a.date &lt; b.date ? 1 : a.date &gt; b.date ? -1 : b.k.localeCompare(a.k)));
+      return out;
+    }});
+  dash.calc(c + &#x27;_accounts&#x27;, {inputs: G.ids, title: &#x27;مانده و گردش هر حساب&#x27;, description: &#x27;مانده = آخرین عدد ستون مانده در تب حساب. ورودی و خروجی = جمع ستون‌ها در بازه انتخابی (با انتقال‌ها).&#x27;,
+    fn: (...accounts) =&gt; {
+      const {from, to} = period();
+      return accounts.map((rows, i) =&gt; {
+        rows = rows || []; const tab = rows.length ? rows[0].tab : null;
+        let bal = null, last = null, inn = 0, out = 0;
+        let undated = 0;
+        rows.forEach((r) =&gt; { if (r.balance != null) bal = r.balance; if (!r.date &amp;&amp; (r.in || r.out)) undated++; if (r.date &amp;&amp; (r.in || r.out) &amp;&amp; (!last || r.date &gt; last)) last = r.date; if (r.date &gt;= from &amp;&amp; r.date &lt;= to) { inn += r.in; out += r.out; } });
+        const key = tab || Object.keys(G.labels)[i];
+        return {tab: key, label: G.labels[key] || key, balance: bal, in: inn, out, last_date: last ? jdate(last) : &#x27;&#x27;, undated};
+      });
+    }});
+  dash.calc(c + &#x27;_cats&#x27;, {inputs: [c + &#x27;_period&#x27;], title: &#x27;جمع بر اساس دسته&#x27;, description: &#x27;جمع ورودی و خروجی تراکنش‌های بازه به تفکیک دسته.&#x27;,
+    fn: (txs) =&gt; {
+      const m = new Map();
+      (txs || []).forEach((t) =&gt; { const e = m.get(t.category) || {category: t.category, category_fa: t.category_fa, kind: t.kind, real: t.real, in: 0, out: 0, n: 0}; e.in += t.in; e.out += t.out; e.n++; m.set(t.category, e); });
+      return [...m.values()].sort((a, b) =&gt; b.out - a.out || b.in - a.in);
+    }});
+  dash.calc(c + &#x27;_totals&#x27;, {inputs: [c + &#x27;_period&#x27;, c + &#x27;_accounts&#x27;], title: &#x27;جمع کل بازه&#x27;, description: &#x27;ورودی و هزینه واقعی (بدون انتقال بین حساب‌ها، خرید و فروش ارز و صندوق عمرانی)، همراه جمع با انتقال‌ها و جمع مانده همه حساب‌ها.&#x27;,
+    fn: (txs, accounts) =&gt; {
+      let inn = 0, out = 0, ir = 0, or = 0;
+      (txs || []).forEach((t) =&gt; { inn += t.in; out += t.out; if (t.real) { ir += t.in; or += t.out; } });
+      const balance = (accounts || []).reduce((s, a) =&gt; s + (a.balance || 0), 0);
+      return [{in: inn, out, in_real: ir, out_real: or, net_real: ir - or, balance, n: (txs || []).length}];
+    }});
+  dash.calc(c + &#x27;_daily&#x27;, {inputs: G.ids, title: &#x27;ورودی و هزینه روزانه (۳۰ روز)&#x27;, description: &#x27;جمع روزانه ورودی و هزینه واقعی در ۳۰ روز منتهی به پایان بازه انتخابی.&#x27;,
+    fn: (...accounts) =&gt; {
+      const {to} = period(); const from = addDays(to, -29); const m = new Map();
+      for (let d = from; d &lt;= to; d = addDays(d, 1)) m.set(d, {date: d, jdate: jdate(d), in_real: 0, out_real: 0});
+      accounts.forEach((rows) =&gt; (rows || []).forEach((r) =&gt; { const e = m.get(r.date); if (!e || !isReal(cat(r.category).kind)) return; e.in_real += r.in; e.out_real += r.out; }));
+      return [...m.values()];
+    }});
+});
+
+// ---------- formatting ----------
+const F = {
+  rial: (n) =&gt; d3.format(&#x27;,.0f&#x27;)(Math.round(n)),
+  eur: (n) =&gt; &#x27;€&#x27; + d3.format(&#x27;,.2f&#x27;)(n),
+  try: (n) =&gt; &#x27;₺&#x27; + d3.format(&#x27;,.2f&#x27;)(n)};
+const short = (c, n) =&gt; {
+  const a = Math.abs(n);
+  if (c === &#x27;rial&#x27;) return a &gt;= 1e9 ? d3.format(&#x27;,.1f&#x27;)(n / 1e9) + &#x27;B&#x27; : a &gt;= 1e6 ? d3.format(&#x27;,.0f&#x27;)(n / 1e6) + &#x27;M&#x27; : d3.format(&#x27;,.0f&#x27;)(n);
+  return a &gt;= 1000 ? d3.format(&#x27;,.1f&#x27;)(n / 1000) + &#x27;k&#x27; : d3.format(&#x27;,.0f&#x27;)(n);
+};
+const setText = (el, s) =&gt; { el.textContent = s; };
+const st = (id) =&gt; dash.data(id).status;
+const ui = {rial: {dir: &#x27;all&#x27;, internal: false, cat: null}, eur: {dir: &#x27;all&#x27;, internal: false, cat: null}, try: {dir: &#x27;all&#x27;, internal: false, cat: null}};
+const tipOf = (el) =&gt; { let t = el.querySelector(&#x27;:scope &gt; .bk-tip&#x27;); if (!t) { t = document.createElement(&#x27;div&#x27;); t.className = &#x27;bk-tip&#x27;; t.hidden = true; el.appendChild(t); } return t; };
+const placeTip = (el, tip, ev) =&gt; {
+  const r = el.getBoundingClientRect(); let x = ev.clientX - r.left + 12, y = ev.clientY - r.top + 12;
+  tip.hidden = false; const w = tip.offsetWidth; if (x + w &gt; r.width) x = Math.max(0, ev.clientX - r.left - w - 12);
+  tip.style.left = x + &#x27;px&#x27;; tip.style.top = y + &#x27;px&#x27;;
+};
+
+// period label
+dash.draw(&#x27;period-label&#x27;, (el) =&gt; { const {from, to} = period(); setText(el, from === to ? jdate(from) : &#x27;از &#x27; + jdate(from) + &#x27; تا &#x27; + jdate(to)); });
+
+Object.keys(GROUPS).forEach((c) =&gt; {
+  const f = F[c];
+  const tot = (field, el, cls) =&gt; { const d = dash.data(c + &#x27;_totals&#x27;); if (d.status !== &#x27;ok&#x27; || !d.data || !d.data[0]) { setText(el, &#x27;—&#x27;); return; } const v = d.data[0][field]; setText(el, f(v)); if (cls) { el.classList.toggle(&#x27;bk-pos&#x27;, v &gt; 0); el.classList.toggle(&#x27;bk-neg&#x27;, v &lt; 0); } };
+  dash.draw(c + &#x27;-in&#x27;, (el) =&gt; tot(&#x27;in_real&#x27;, el));
+  dash.draw(c + &#x27;-out&#x27;, (el) =&gt; tot(&#x27;out_real&#x27;, el));
+  dash.draw(c + &#x27;-in-all&#x27;, (el) =&gt; tot(&#x27;in&#x27;, el));
+  dash.draw(c + &#x27;-out-all&#x27;, (el) =&gt; tot(&#x27;out&#x27;, el));
+  dash.draw(c + &#x27;-net&#x27;, (el) =&gt; tot(&#x27;net_real&#x27;, el, true));
+  dash.draw(c + &#x27;-bal&#x27;, (el) =&gt; tot(&#x27;balance&#x27;, el));
+  dash.draw(c + &#x27;-lede-in&#x27;, (el) =&gt; tot(&#x27;in_real&#x27;, el));
+  dash.draw(c + &#x27;-lede-out&#x27;, (el) =&gt; tot(&#x27;out_real&#x27;, el));
+  dash.draw(c + &#x27;-lede-top&#x27;, (el) =&gt; {
+    const d = dash.data(c + &#x27;_cats&#x27;); el.replaceChildren();
+    if (d.status !== &#x27;ok&#x27; || !d.data) return;
+    const top = d.data.filter((x) =&gt; x.real &amp;&amp; x.out &gt; 0)[0];
+    if (!top) return;
+    el.append(&#x27;؛ بیشترین هزینه «&#x27;);
+    const b = document.createElement(&#x27;b&#x27;); b.textContent = top.category_fa; el.append(b, &#x27;» با &#x27;);
+    const v = document.createElement(&#x27;b&#x27;); v.className = &#x27;bk-n&#x27;; v.textContent = f(top.out);
+    v.dataset.source = c + &#x27;_cats&#x27;; v.dataset.field = &#x27;out&#x27;; v.dataset.where = &#x27;category=&#x27; + encodeURIComponent(top.category);
+    el.append(v);
+  });
+
+  // accounts table
+  dash.draw(c + &#x27;-acc-body&#x27;, (tb) =&gt; {
+    const d = dash.data(c + &#x27;_accounts&#x27;); tb.replaceChildren();
+    if (d.status !== &#x27;ok&#x27; || !d.data) { const tr = tb.insertRow(); const td = tr.insertCell(); td.colSpan = 5; td.className = &#x27;bk-fail&#x27;; td.textContent = d.status === &#x27;error&#x27; ? &#x27;بارگذاری نشد&#x27; : &#x27;—&#x27;; return; }
+    const maxBal = d3.max(d.data, (a) =&gt; Math.abs(a.balance || 0)) || 1;
+    [...d.data].sort((a, b) =&gt; (b.balance || 0) - (a.balance || 0)).forEach((a) =&gt; {
+      const tr = tb.insertRow(); tr.dataset.key = encodeURIComponent(a.tab);
+      const td = (txt, cls) =&gt; { const x = tr.insertCell(); x.textContent = txt; if (cls) x.className = cls; return x; };
+      const nm = td(a.label, &#x27;bk-acc&#x27;);
+      if (a.undated) { const s = document.createElement(&#x27;span&#x27;); s.className = &#x27;bk-flag&#x27;; s.textContent = a.undated + &#x27; ردیف بی‌تاریخ&#x27;; s.title = &#x27;این ردیف‌ها در مانده هستند ولی در جمع هیچ بازه‌ای نمی‌آیند&#x27;; nm.append(&#x27; &#x27;, s); }
+      const bc = td(a.balance == null ? &#x27;—&#x27; : f(a.balance), &#x27;num bk-balcell&#x27; + (a.balance &lt; 0 ? &#x27; bk-neg&#x27; : &#x27;&#x27;));
+      if (a.balance != null) { const bar = document.createElement(&#x27;span&#x27;); bar.className = &#x27;bk-balbar&#x27;; bar.style.width = (100 * Math.abs(a.balance) / maxBal) + &#x27;%&#x27;; bc.append(bar); }
+      td(a.in ? f(a.in) : &#x27;·&#x27;, &#x27;num&#x27; + (a.in ? &#x27; bk-pos&#x27; : &#x27; bk-muted&#x27;));
+      td(a.out ? f(a.out) : &#x27;·&#x27;, &#x27;num&#x27; + (a.out ? &#x27; bk-neg&#x27; : &#x27; bk-muted&#x27;));
+      td(a.last_date, &#x27;bk-muted&#x27;);
+    });
+  });
+
+  // category bars
+  dash.draw(c + &#x27;-cats&#x27;, (el) =&gt; {
+    const d = dash.data(c + &#x27;_cats&#x27;); const tip = tipOf(el);
+    [...el.children].forEach((ch) =&gt; { if (ch !== tip) ch.remove(); });
+    tip.hidden = true;
+    const msg = (s) =&gt; { const p = document.createElement(&#x27;p&#x27;); p.className = &#x27;bk-fail&#x27;; p.textContent = s; el.prepend(p); };
+    if (d.status !== &#x27;ok&#x27; || !d.data) { msg(d.status === &#x27;error&#x27; ? &#x27;بارگذاری نشد&#x27; : &#x27;—&#x27;); return; }
+    const rows = d.data.filter((x) =&gt; x.real &amp;&amp; x.out &gt; 0);
+    if (!rows.length) { msg(&#x27;در این بازه هزینه‌ای ثبت نشده است.&#x27;); return; }
+    const max = d3.max(rows, (x) =&gt; x.out); const sum = d3.sum(rows, (x) =&gt; x.out);
+    rows.forEach((x) =&gt; {
+      const b = document.createElement(&#x27;button&#x27;); b.type = &#x27;button&#x27;; b.className = &#x27;bk-bar&#x27; + (ui[c].cat === x.category ? &#x27; is-on&#x27; : &#x27;&#x27;);
+      const l = document.createElement(&#x27;span&#x27;); l.className = &#x27;bk-bar-l&#x27;; l.textContent = x.category_fa;
+      const t = document.createElement(&#x27;span&#x27;); t.className = &#x27;bk-bar-t&#x27;;
+      const fl = document.createElement(&#x27;span&#x27;); fl.className = &#x27;bk-bar-f&#x27;; fl.style.width = (100 * x.out / max) + &#x27;%&#x27;; fl.style.background = dash.colors[0]; t.append(fl);
+      const v = document.createElement(&#x27;span&#x27;); v.className = &#x27;bk-bar-v&#x27;; v.textContent = f(x.out);
+      v.dataset.source = c + &#x27;_cats&#x27;; v.dataset.field = &#x27;out&#x27;; v.dataset.where = &#x27;category=&#x27; + encodeURIComponent(x.category);
+      b.append(l, t, v);
+      b.onmousemove = (ev) =&gt; { tip.textContent = x.category_fa + &#x27; · &#x27; + f(x.out) + &#x27; · &#x27; + d3.format(&#x27;.0%&#x27;)(x.out / sum) + &#x27; از کل · &#x27; + x.n + &#x27; تراکنش&#x27;; placeTip(el, tip, ev); };
+      b.onmouseleave = () =&gt; { tip.hidden = true; };
+      b.onclick = () =&gt; { ui[c].cat = ui[c].cat === x.category ? null : x.category; if (ui[c].cat) ui[c].internal = true; syncTx(c); };
+      el.insertBefore(b, tip);
+    });
+    // income categories too
+    const ins = d.data.filter((x) =&gt; x.in &gt; 0);
+    if (ins.length) {
+      const p = document.createElement(&#x27;p&#x27;); p.className = &#x27;bk-note&#x27;;
+      p.textContent = &#x27;ورودی‌ها: &#x27; + ins.map((x) =&gt; x.category_fa + &#x27; &#x27; + f(x.in)).join(&#x27; · &#x27;);
+      el.insertBefore(p, tip);
+    }
+  });
+
+  // daily chart
+  dash.draw(c + &#x27;-daily&#x27;, (el) =&gt; {
+    const d = dash.data(c + &#x27;_daily&#x27;); const tip = tipOf(el);
+    el.querySelectorAll(&#x27;svg, .bk-fail&#x27;).forEach((n) =&gt; n.remove()); tip.hidden = true;
+    if (d.status !== &#x27;ok&#x27; || !d.data) { const p = document.createElement(&#x27;p&#x27;); p.className = &#x27;bk-fail&#x27;; p.textContent = d.status === &#x27;error&#x27; ? &#x27;بارگذاری نشد&#x27; : &#x27;—&#x27;; el.prepend(p); return; }
+    const data = d.data; const W = Math.max(280, el.clientWidth), H = 220;
+    const ymax = d3.max(data, (x) =&gt; Math.max(x.in_real, x.out_real)) || 1;
+    const y = d3.scaleLinear().domain([0, ymax]).nice(4).range([H - 26, 10]);
+    const svg = d3.create(&#x27;svg&#x27;).attr(&#x27;width&#x27;, &#x27;100%&#x27;).attr(&#x27;height&#x27;, H).attr(&#x27;viewBox&#x27;, `0 0 ${W} ${H}`).attr(&#x27;role&#x27;, &#x27;img&#x27;).attr(&#x27;aria-label&#x27;, &#x27;نمودار ورودی و هزینه روزانه ۳۰ روز اخیر&#x27;);
+    el.prepend(svg.node());
+    const ticks = y.ticks(4);
+    const tg = svg.append(&#x27;g&#x27;);
+    const labels = tg.selectAll(&#x27;text&#x27;).data(ticks).join(&#x27;text&#x27;).attr(&#x27;x&#x27;, 0).attr(&#x27;y&#x27;, (t) =&gt; y(t) + 4).attr(&#x27;direction&#x27;, &#x27;ltr&#x27;).text((t) =&gt; short(c, t));
+    const ml = Math.ceil(d3.max(labels.nodes(), (n) =&gt; n.getComputedTextLength()) || 30) + 8;
+    labels.attr(&#x27;x&#x27;, 0);
+    const x = d3.scaleBand().domain(data.map((r) =&gt; r.date)).range([ml, W - 4]).padding(0.2);
+    svg.insert(&#x27;g&#x27;, &#x27;:first-child&#x27;).selectAll(&#x27;line&#x27;).data(ticks).join(&#x27;line&#x27;).attr(&#x27;x1&#x27;, ml).attr(&#x27;x2&#x27;, W - 4).attr(&#x27;y1&#x27;, (t) =&gt; y(t)).attr(&#x27;y2&#x27;, (t) =&gt; y(t)).style(&#x27;stroke&#x27;, &#x27;var(--cds-chart-grid)&#x27;);
+    const bw = x.bandwidth() / 2;
+    const g = svg.append(&#x27;g&#x27;);
+    data.forEach((r) =&gt; {
+      const gx = g.append(&#x27;g&#x27;);
+      gx.append(&#x27;rect&#x27;).attr(&#x27;x&#x27;, x(r.date)).attr(&#x27;width&#x27;, bw).attr(&#x27;y&#x27;, y(r.in_real)).attr(&#x27;height&#x27;, y(0) - y(r.in_real)).attr(&#x27;rx&#x27;, Math.min(3, bw / 3)).style(&#x27;fill&#x27;, dash.colors[0]);
+      gx.append(&#x27;rect&#x27;).attr(&#x27;x&#x27;, x(r.date) + bw).attr(&#x27;width&#x27;, bw).attr(&#x27;y&#x27;, y(r.out_real)).attr(&#x27;height&#x27;, y(0) - y(r.out_real)).attr(&#x27;rx&#x27;, Math.min(3, bw / 3)).style(&#x27;fill&#x27;, &#x27;var(--color-bad)&#x27;);
+      gx.append(&#x27;rect&#x27;).attr(&#x27;x&#x27;, x(r.date) - x.step() * x.padding() / 2).attr(&#x27;width&#x27;, x.step()).attr(&#x27;y&#x27;, 0).attr(&#x27;height&#x27;, H - 20).style(&#x27;fill&#x27;, &#x27;transparent&#x27;)
+        .on(&#x27;mousemove&#x27;, (ev) =&gt; { tip.textContent = jdate(r.date) + &#x27; · ورودی &#x27; + f(r.in_real) + &#x27; · هزینه &#x27; + f(r.out_real); placeTip(el, tip, ev); })
+        .on(&#x27;mouseleave&#x27;, () =&gt; { tip.hidden = true; });
+    });
+    const every = Math.max(1, Math.ceil(data.length / Math.max(2, Math.floor((W - ml) / 70))));
+    svg.append(&#x27;g&#x27;).selectAll(&#x27;text&#x27;).data(data.filter((r, i) =&gt; (data.length - 1 - i) % every === 0)).join(&#x27;text&#x27;)
+      .attr(&#x27;x&#x27;, (r) =&gt; x(r.date) + x.bandwidth() / 2).attr(&#x27;y&#x27;, H - 6).attr(&#x27;text-anchor&#x27;, &#x27;middle&#x27;).attr(&#x27;direction&#x27;, &#x27;ltr&#x27;).text((r) =&gt; jdate(r.date).slice(5));
+  });
+
+  // transactions
+  dash.draw(c + &#x27;-catname&#x27;, (el) =&gt; { const k = ui[c].cat; setText(el, k ? cat(k).fa : &#x27;&#x27;); });
+  dash.draw(c + &#x27;-tx-body&#x27;, (tb) =&gt; {
+    const d = dash.data(c + &#x27;_period&#x27;); tb.replaceChildren();
+    if (d.status !== &#x27;ok&#x27; || !d.data) { const tr = tb.insertRow(); const td = tr.insertCell(); td.colSpan = 6; td.className = &#x27;bk-fail&#x27;; td.textContent = d.status === &#x27;error&#x27; ? &#x27;بارگذاری نشد&#x27; : &#x27;—&#x27;; return; }
+    const u = ui[c];
+    const rows = d.data.filter((t) =&gt; (u.internal || t.real) &amp;&amp; (u.dir === &#x27;all&#x27; || (u.dir === &#x27;in&#x27; ? t.in &gt; 0 : t.out &gt; 0)) &amp;&amp; (!u.cat || t.category === u.cat));
+    if (!rows.length) { const tr = tb.insertRow(); const td = tr.insertCell(); td.colSpan = 6; td.className = &#x27;bk-muted&#x27;; td.textContent = &#x27;در این بازه تراکنشی با این فیلتر نیست.&#x27;; }
+    rows.slice(0, 400).forEach((t) =&gt; {
+      const tr = tb.insertRow(); tr.dataset.key = encodeURIComponent(t.k);
+      const td = (txt, cls) =&gt; { const x = tr.insertCell(); x.textContent = txt; if (cls) x.className = cls; return x; };
+      td(t.jdate, &#x27;bk-n&#x27;); td(t.account);
+      td(t.in ? f(t.in) : &#x27;&#x27;, &#x27;num bk-pos&#x27;); td(t.out ? f(t.out) : &#x27;&#x27;, &#x27;num bk-neg&#x27;);
+      td(t.category_fa, t.real ? &#x27;&#x27; : &#x27;bk-muted&#x27;);
+      td([t.subject, t.description].filter(Boolean).join(&#x27; — &#x27;));
+    });
+  });
+  dash.draw(c + &#x27;-tx-more&#x27;, (el) =&gt; {
+    const d = dash.data(c + &#x27;_period&#x27;); if (d.status !== &#x27;ok&#x27; || !d.data) { setText(el, &#x27;&#x27;); return; }
+    const u = ui[c]; const n = d.data.filter((t) =&gt; (u.internal || t.real) &amp;&amp; (u.dir === &#x27;all&#x27; || (u.dir === &#x27;in&#x27; ? t.in &gt; 0 : t.out &gt; 0)) &amp;&amp; (!u.cat || t.category === u.cat)).length;
+    setText(el, n &gt; 400 ? n + &#x27; تراکنش؛ ۴۰۰ مورد آخر نمایش داده شده است. برای دیدن بقیه بازه را کوتاه‌تر کنید.&#x27; : n + &#x27; تراکنش&#x27;);
+  });
+});
+
+function syncTx(c) {
+  const u = ui[c];
+  document.querySelectorAll(&#x27;.bk-txdir[data-cur=&quot;&#x27; + c + &#x27;&quot;]&#x27;).forEach((s) =&gt; { s.value = u.dir; });
+  document.querySelectorAll(&#x27;.bk-txint[data-cur=&quot;&#x27; + c + &#x27;&quot;]&#x27;).forEach((s) =&gt; { s.checked = u.internal; });
+  document.querySelectorAll(&#x27;.bk-clear[data-cur=&quot;&#x27; + c + &#x27;&quot;]&#x27;).forEach((b) =&gt; { b.hidden = !u.cat; });
+  [c + &#x27;-tx-body&#x27;, c + &#x27;-tx-more&#x27;, c + &#x27;-cats&#x27;, c + &#x27;-catname&#x27;].forEach((n) =&gt; dash.draw(n));
+}
+document.querySelectorAll(&#x27;.bk-txdir&#x27;).forEach((s) =&gt; s.addEventListener(&#x27;change&#x27;, () =&gt; { ui[s.dataset.cur].dir = s.value; syncTx(s.dataset.cur); }));
+document.querySelectorAll(&#x27;.bk-txint&#x27;).forEach((s) =&gt; s.addEventListener(&#x27;change&#x27;, () =&gt; { ui[s.dataset.cur].internal = s.checked; syncTx(s.dataset.cur); }));
+document.querySelectorAll(&#x27;.bk-clear&#x27;).forEach((b) =&gt; b.addEventListener(&#x27;click&#x27;, () =&gt; { ui[b.dataset.cur].cat = null; syncTx(b.dataset.cur); }));
+
+// accent from the theme
+document.querySelectorAll(&#x27;.bk&#x27;).forEach((el) =&gt; { el.style.setProperty(&#x27;--bk-accent&#x27;, dash.colors[0]); el.style.setProperty(&#x27;--bk-accent2&#x27;, dash.colors[1] || dash.colors[0]); el.style.setProperty(&#x27;--bk-accent3&#x27;, dash.colors[2] || dash.colors[1] || dash.colors[0]); });
+
+// tabs
+const showTab = (name) =&gt; {
+  if (!GROUPS[name]) name = &#x27;rial&#x27;;
+  document.querySelectorAll(&#x27;.bk-sec&#x27;).forEach((s) =&gt; { s.hidden = s.id !== name; });
+  document.querySelectorAll(&#x27;.bk-tab&#x27;).forEach((b) =&gt; { const on = b.dataset.tab === name; b.classList.toggle(&#x27;is-on&#x27;, on); b.setAttribute(&#x27;aria-selected&#x27;, on ? &#x27;true&#x27; : &#x27;false&#x27;); });
+};
+document.querySelectorAll(&#x27;.bk-tab&#x27;).forEach((b) =&gt; b.addEventListener(&#x27;click&#x27;, () =&gt; { showTab(b.dataset.tab); dash.setLink(b.dataset.tab); }));
+showTab((location.hash || &#x27;&#x27;).slice(1));
+
+// period controls
+const presetRange = (p) =&gt; {
+  const t = today();
+  if (p === &#x27;yesterday&#x27;) return [addDays(t, -1), addDays(t, -1)];
+  if (p === &#x27;7d&#x27;) return [addDays(t, -6), t];
+  if (p === &#x27;month&#x27;) return [jMonthStart(t), t];
+  if (p === &#x27;year&#x27;) return [jYearStart(t), t];
+  return [&#x27;&#x27;, &#x27;&#x27;];
+};
+document.querySelectorAll(&#x27;.bk-pre&#x27;).forEach((b) =&gt; b.addEventListener(&#x27;click&#x27;, () =&gt; { const [from, to] = presetRange(b.dataset.preset); dash.setParams({from, to}); }));
+const onDate = (el, key) =&gt; el.addEventListener(&#x27;change&#x27;, () =&gt; { if (el.value &amp;&amp; el.validity.valid) { const p = period(); const v = {from: p.from, to: p.to}; v[key] = el.value; dash.setParams(v); } });
+document.querySelectorAll(&#x27;#p-from&#x27;).forEach((el) =&gt; onDate(el, &#x27;from&#x27;));
+document.querySelectorAll(&#x27;#p-to&#x27;).forEach((el) =&gt; onDate(el, &#x27;to&#x27;));
+document.querySelectorAll(&#x27;#p-from, #p-to&#x27;).forEach((el) =&gt; el.addEventListener(&#x27;blur&#x27;, () =&gt; { const p = period(); el.value = el.id === &#x27;p-from&#x27; ? p.from : p.to; }));
+dash.onData(() =&gt; {
+  const p = period();
+  document.querySelectorAll(&#x27;#p-from&#x27;).forEach((el) =&gt; { if (document.activeElement !== el) el.value = p.from; });
+  document.querySelectorAll(&#x27;#p-to&#x27;).forEach((el) =&gt; { if (document.activeElement !== el) el.value = p.to; });
+  document.querySelectorAll(&#x27;.bk-pre&#x27;).forEach((b) =&gt; { const [f, t] = presetRange(b.dataset.preset); const ff = f || today(), tt = t || today(); b.classList.toggle(&#x27;is-on&#x27;, ff === p.from &amp;&amp; tt === p.to); });
+});
+})();
+
+document.querySelectorAll(&#x27;#bk-refresh&#x27;).forEach((b) =&gt; b.addEventListener(&#x27;click&#x27;, () =&gt; window.bkLoad()));
+setInterval(() =&gt; { if (!document.hidden) window.bkLoad(); }, 10 * 60 * 1000);
+document.addEventListener(&#x27;visibilitychange&#x27;, () =&gt; { if (!document.hidden) window.bkRunAll(); });
+window.bkLoad();
+&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</textarea></div>
+  </div></section>
+
+  <section class="step"><span class="num">4</span><div>
+    <h2>تنظیمات پروژه را بگذارید</h2>
+    <p>از منوی چپ <b>Project Settings</b> (چرخ‌دنده) را باز کنید و تیک <b>Show "appsscript.json" manifest file in editor</b> را بزنید. بعد به <b>Editor</b> برگردید، فایل <code>appsscript.json</code> را باز کنید و محتوایش را با این عوض کنید:</p>
+    <div class="file"><div class="fh"><span class="fn">appsscript.json</span><button class="copy" type="button" data-for="t-man" id="b-man">کپی</button></div><textarea id="t-man" readonly spellcheck="false" style="height:120px">{
+  &quot;timeZone&quot;: &quot;Asia/Tehran&quot;,
+  &quot;exceptionLogging&quot;: &quot;STACKDRIVER&quot;,
+  &quot;runtimeVersion&quot;: &quot;V8&quot;,
+  &quot;webapp&quot;: { &quot;executeAs&quot;: &quot;USER_DEPLOYING&quot;, &quot;access&quot;: &quot;MYSELF&quot; }
+}</textarea></div>
+    <p class="note">در آخر با Ctrl+S همه را ذخیره کنید.</p>
+  </div></section>
+
+  <section class="step"><span class="num">5</span><div>
+    <h2>منتشر کنید</h2>
+    <ol><li>بالا سمت راست <b>Deploy</b> و بعد <b>New deployment</b> را بزنید.</li>
+    <li>روی چرخ‌دندهٔ کنار <b>Select type</b> بزنید و <b>Web app</b> را انتخاب کنید.</li>
+    <li><b>Execute as</b> را روی <code>Me</code> و <b>Who has access</b> را روی <code>Only myself</code> بگذارید. اگر همکاران باگلوس هم باید ببینند، گزینهٔ دامنهٔ باگلوس را انتخاب کنید.</li>
+    <li><b>Deploy</b> و بعد <b>Authorize access</b> را بزنید و حساب گوگلتان را انتخاب کنید. اگر پیام «Google hasn't verified this app» آمد، <b>Advanced</b> و بعد <b>Go to داشبورد بانک‌ها</b> را بزنید و در آخر <b>Allow</b>. این اسکریپت مال خودتان است و فقط اجازهٔ خواندن شیت‌ها را می‌خواهد.</li>
+    <li>لینک <b>Web app</b> را کپی کنید. با <code>script.google.com/macros/s/…/exec</code> شروع می‌شود.</li></ol>
+  </div></section>
+
+  <section class="step"><span class="num">6</span><div>
+    <h2>روی ویندوز نصب کنید</h2>
+    <ul><li><b>Chrome:</b> لینک را باز کنید، منوی <b>⋮</b> را بزنید و <b>Cast, save and share</b> و بعد <b>Install page as app</b> را انتخاب کنید.</li>
+    <li><b>Edge:</b> لینک را باز کنید، منوی <b>…</b> را بزنید و <b>Apps</b> و بعد <b>Install this site as an app</b> را انتخاب کنید.</li></ul>
+    <p class="note">از این به بعد داشبورد در منوی Start و روی دسکتاپ هست و در یک پنجرهٔ جدا باز می‌شود. هر بار که بازش کنید، از گوگل‌شیت خوانده می‌شود و تا وقتی باز است هر ۱۰ دقیقه خودش به‌روز می‌شود.</p>
+  </div></section>
+</div>
+<script>
+document.querySelectorAll('.copy').forEach((b) => b.addEventListener('click', () => {
+  const t = document.getElementById(b.dataset.for);
+  const ok = () => { b.textContent = 'کپی شد ✓'; b.classList.add('done'); setTimeout(() => { b.textContent = 'کپی'; b.classList.remove('done'); }, 2500); };
+  const fallback = () => { t.focus(); t.select(); try { document.execCommand('copy'); ok(); } catch (e) { b.textContent = 'Ctrl+C را بزنید'; } };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t.value).then(ok, fallback); else fallback();
+}));
+</script>
